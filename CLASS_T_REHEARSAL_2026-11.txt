@@ -1,0 +1,3 @@
+BITAGI Class T OTS rehearsal registration (2026-11)
+Status: NO PRODUCTION NETWORK ACTIVE; DO NOT ACTIVATE; Class P NO-GO; DO NOT GENESIS
+This file registers nothing for Class E or Class P. It exists only to rehearse the FD-CT-92 row 1 witnesses (signed tag, GitHub release time, OpenTimestamps).
