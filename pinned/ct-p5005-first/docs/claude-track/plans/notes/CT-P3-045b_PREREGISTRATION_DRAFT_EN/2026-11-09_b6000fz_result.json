@@ -1,0 +1,2726 @@
+{
+  "artifact": {
+    "kind": "preflight",
+    "payload_bytes": 2627,
+    "sha256": "fd275303750bc74d5565a8cc6f9e88e52c81ad2658710ed390ff1f16618224e0",
+    "version": 1
+  },
+  "command": "preflight",
+  "details": {
+    "actual_fee_consumption_sat": null,
+    "anchor_value_counted": false,
+    "caps": {
+      "admission_cap_sat_per_kvb": 1000000,
+      "planning_cap_sat_per_kvb": 100000000
+    },
+    "components": [
+      {
+        "component": "REGISTER_ATTEMPTS",
+        "lines": [
+          {
+            "fee_per_operation_sat": 1278,
+            "operations": 24,
+            "rate_sat_per_kvb": 6000,
+            "role": "ATTEMPT",
+            "subtotal_sat": 30672,
+            "transaction": "REGISTER",
+            "vsize": 213
+          }
+        ],
+        "minimum_basis": "TDS_8_10_COUNT",
+        "minimum_operations": 5,
+        "operations": 24,
+        "subtotal_sat": 30672
+      },
+      {
+        "component": "REGISTER_REPLACEMENTS",
+        "ladder": {
+          "form": "STEP",
+          "step_sat_per_kvb": 1148
+        },
+        "lines": [
+          {
+            "fee_per_operation_sat": 1523,
+            "operations": 1,
+            "rate_sat_per_kvb": 7148,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 1523,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 1768,
+            "operations": 1,
+            "rate_sat_per_kvb": 8296,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 1768,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 2012,
+            "operations": 1,
+            "rate_sat_per_kvb": 9444,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 2012,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 2257,
+            "operations": 1,
+            "rate_sat_per_kvb": 10592,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 2257,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 2501,
+            "operations": 1,
+            "rate_sat_per_kvb": 11740,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 2501,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 2746,
+            "operations": 1,
+            "rate_sat_per_kvb": 12888,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 2746,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 2990,
+            "operations": 1,
+            "rate_sat_per_kvb": 14036,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 2990,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 3235,
+            "operations": 1,
+            "rate_sat_per_kvb": 15184,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 3235,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 3479,
+            "operations": 1,
+            "rate_sat_per_kvb": 16332,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 3479,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 3724,
+            "operations": 1,
+            "rate_sat_per_kvb": 17480,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 3724,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 3968,
+            "operations": 1,
+            "rate_sat_per_kvb": 18628,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 3968,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 4213,
+            "operations": 1,
+            "rate_sat_per_kvb": 19776,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 4213,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 4457,
+            "operations": 1,
+            "rate_sat_per_kvb": 20924,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 4457,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 4702,
+            "operations": 1,
+            "rate_sat_per_kvb": 22072,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 4702,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 4946,
+            "operations": 1,
+            "rate_sat_per_kvb": 23220,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 4946,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 5191,
+            "operations": 1,
+            "rate_sat_per_kvb": 24368,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 5191,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 5435,
+            "operations": 1,
+            "rate_sat_per_kvb": 25516,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 5435,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 5680,
+            "operations": 1,
+            "rate_sat_per_kvb": 26664,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 5680,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 5924,
+            "operations": 1,
+            "rate_sat_per_kvb": 27812,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 5924,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 6169,
+            "operations": 1,
+            "rate_sat_per_kvb": 28960,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 6169,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 6414,
+            "operations": 1,
+            "rate_sat_per_kvb": 30108,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 6414,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 6658,
+            "operations": 1,
+            "rate_sat_per_kvb": 31256,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 6658,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 6903,
+            "operations": 1,
+            "rate_sat_per_kvb": 32404,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 6903,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 7147,
+            "operations": 1,
+            "rate_sat_per_kvb": 33552,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 7147,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 7392,
+            "operations": 1,
+            "rate_sat_per_kvb": 34700,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 7392,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 7636,
+            "operations": 1,
+            "rate_sat_per_kvb": 35848,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 7636,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 7881,
+            "operations": 1,
+            "rate_sat_per_kvb": 36996,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 7881,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 8125,
+            "operations": 1,
+            "rate_sat_per_kvb": 38144,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 8125,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 8370,
+            "operations": 1,
+            "rate_sat_per_kvb": 39292,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 8370,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 8614,
+            "operations": 1,
+            "rate_sat_per_kvb": 40440,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 8614,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 8859,
+            "operations": 1,
+            "rate_sat_per_kvb": 41588,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 8859,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 9103,
+            "operations": 1,
+            "rate_sat_per_kvb": 42736,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 9103,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 9348,
+            "operations": 1,
+            "rate_sat_per_kvb": 43884,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 9348,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 9592,
+            "operations": 1,
+            "rate_sat_per_kvb": 45032,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 9592,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 9837,
+            "operations": 1,
+            "rate_sat_per_kvb": 46180,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 9837,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 10081,
+            "operations": 1,
+            "rate_sat_per_kvb": 47328,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 10081,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 10326,
+            "operations": 1,
+            "rate_sat_per_kvb": 48476,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 10326,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 10570,
+            "operations": 1,
+            "rate_sat_per_kvb": 49624,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 10570,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 10815,
+            "operations": 1,
+            "rate_sat_per_kvb": 50772,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 10815,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 11059,
+            "operations": 1,
+            "rate_sat_per_kvb": 51920,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 11059,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 11304,
+            "operations": 1,
+            "rate_sat_per_kvb": 53068,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 11304,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 11549,
+            "operations": 1,
+            "rate_sat_per_kvb": 54216,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 11549,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 11793,
+            "operations": 1,
+            "rate_sat_per_kvb": 55364,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 11793,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 12038,
+            "operations": 1,
+            "rate_sat_per_kvb": 56512,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 12038,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 12282,
+            "operations": 1,
+            "rate_sat_per_kvb": 57660,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 12282,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 12527,
+            "operations": 1,
+            "rate_sat_per_kvb": 58808,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 12527,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 12771,
+            "operations": 1,
+            "rate_sat_per_kvb": 59956,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 12771,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 13016,
+            "operations": 1,
+            "rate_sat_per_kvb": 61104,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 13016,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 13260,
+            "operations": 1,
+            "rate_sat_per_kvb": 62252,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 13260,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 13505,
+            "operations": 1,
+            "rate_sat_per_kvb": 63400,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 13505,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 13749,
+            "operations": 1,
+            "rate_sat_per_kvb": 64548,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 13749,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 13994,
+            "operations": 1,
+            "rate_sat_per_kvb": 65696,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 13994,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 14238,
+            "operations": 1,
+            "rate_sat_per_kvb": 66844,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 14238,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 14483,
+            "operations": 1,
+            "rate_sat_per_kvb": 67992,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 14483,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 14727,
+            "operations": 1,
+            "rate_sat_per_kvb": 69140,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 14727,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 14972,
+            "operations": 1,
+            "rate_sat_per_kvb": 70288,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 14972,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 15216,
+            "operations": 1,
+            "rate_sat_per_kvb": 71436,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 15216,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 15461,
+            "operations": 1,
+            "rate_sat_per_kvb": 72584,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 15461,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 15705,
+            "operations": 1,
+            "rate_sat_per_kvb": 73732,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 15705,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 15950,
+            "operations": 1,
+            "rate_sat_per_kvb": 74880,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 15950,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 16194,
+            "operations": 1,
+            "rate_sat_per_kvb": 76028,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 16194,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 16439,
+            "operations": 1,
+            "rate_sat_per_kvb": 77176,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 16439,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 16684,
+            "operations": 1,
+            "rate_sat_per_kvb": 78324,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 16684,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 16928,
+            "operations": 1,
+            "rate_sat_per_kvb": 79472,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 16928,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 17173,
+            "operations": 1,
+            "rate_sat_per_kvb": 80620,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 17173,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 17417,
+            "operations": 1,
+            "rate_sat_per_kvb": 81768,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 17417,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 17662,
+            "operations": 1,
+            "rate_sat_per_kvb": 82916,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 17662,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 17906,
+            "operations": 1,
+            "rate_sat_per_kvb": 84064,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 17906,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 18151,
+            "operations": 1,
+            "rate_sat_per_kvb": 85212,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 18151,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 18395,
+            "operations": 1,
+            "rate_sat_per_kvb": 86360,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 18395,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 18640,
+            "operations": 1,
+            "rate_sat_per_kvb": 87508,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 18640,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 18884,
+            "operations": 1,
+            "rate_sat_per_kvb": 88656,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 18884,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 19129,
+            "operations": 1,
+            "rate_sat_per_kvb": 89804,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 19129,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 19373,
+            "operations": 1,
+            "rate_sat_per_kvb": 90952,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 19373,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 19618,
+            "operations": 1,
+            "rate_sat_per_kvb": 92100,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 19618,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 19862,
+            "operations": 1,
+            "rate_sat_per_kvb": 93248,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 19862,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 20107,
+            "operations": 1,
+            "rate_sat_per_kvb": 94396,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 20107,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 20351,
+            "operations": 1,
+            "rate_sat_per_kvb": 95544,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 20351,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 20596,
+            "operations": 1,
+            "rate_sat_per_kvb": 96692,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 20596,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 20840,
+            "operations": 1,
+            "rate_sat_per_kvb": 97840,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 20840,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 21085,
+            "operations": 1,
+            "rate_sat_per_kvb": 98988,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 21085,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 21329,
+            "operations": 1,
+            "rate_sat_per_kvb": 100136,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 21329,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 21574,
+            "operations": 1,
+            "rate_sat_per_kvb": 101284,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 21574,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 21819,
+            "operations": 1,
+            "rate_sat_per_kvb": 102432,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 21819,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 22063,
+            "operations": 1,
+            "rate_sat_per_kvb": 103580,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 22063,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 22308,
+            "operations": 1,
+            "rate_sat_per_kvb": 104728,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 22308,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 22552,
+            "operations": 1,
+            "rate_sat_per_kvb": 105876,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 22552,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 22797,
+            "operations": 1,
+            "rate_sat_per_kvb": 107024,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 22797,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 23041,
+            "operations": 1,
+            "rate_sat_per_kvb": 108172,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 23041,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 23286,
+            "operations": 1,
+            "rate_sat_per_kvb": 109320,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 23286,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 23530,
+            "operations": 1,
+            "rate_sat_per_kvb": 110468,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 23530,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 23775,
+            "operations": 1,
+            "rate_sat_per_kvb": 111616,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 23775,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 24019,
+            "operations": 1,
+            "rate_sat_per_kvb": 112764,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 24019,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 24264,
+            "operations": 1,
+            "rate_sat_per_kvb": 113912,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 24264,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 24508,
+            "operations": 1,
+            "rate_sat_per_kvb": 115060,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 24508,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 24753,
+            "operations": 1,
+            "rate_sat_per_kvb": 116208,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 24753,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 24997,
+            "operations": 1,
+            "rate_sat_per_kvb": 117356,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 24997,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 25242,
+            "operations": 1,
+            "rate_sat_per_kvb": 118504,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 25242,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 25486,
+            "operations": 1,
+            "rate_sat_per_kvb": 119652,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 25486,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 25731,
+            "operations": 1,
+            "rate_sat_per_kvb": 120800,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 25731,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 25975,
+            "operations": 1,
+            "rate_sat_per_kvb": 121948,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 25975,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 26220,
+            "operations": 1,
+            "rate_sat_per_kvb": 123096,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 26220,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 26464,
+            "operations": 1,
+            "rate_sat_per_kvb": 124244,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 26464,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 26709,
+            "operations": 1,
+            "rate_sat_per_kvb": 125392,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 26709,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 26954,
+            "operations": 1,
+            "rate_sat_per_kvb": 126540,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 26954,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 27198,
+            "operations": 1,
+            "rate_sat_per_kvb": 127688,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 27198,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 27443,
+            "operations": 1,
+            "rate_sat_per_kvb": 128836,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 27443,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 27687,
+            "operations": 1,
+            "rate_sat_per_kvb": 129984,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 27687,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 27932,
+            "operations": 1,
+            "rate_sat_per_kvb": 131132,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 27932,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 28176,
+            "operations": 1,
+            "rate_sat_per_kvb": 132280,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 28176,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 28421,
+            "operations": 1,
+            "rate_sat_per_kvb": 133428,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 28421,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 28665,
+            "operations": 1,
+            "rate_sat_per_kvb": 134576,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 28665,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 28910,
+            "operations": 1,
+            "rate_sat_per_kvb": 135724,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 28910,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 29154,
+            "operations": 1,
+            "rate_sat_per_kvb": 136872,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 29154,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 29399,
+            "operations": 1,
+            "rate_sat_per_kvb": 138020,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 29399,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 29643,
+            "operations": 1,
+            "rate_sat_per_kvb": 139168,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 29643,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 29888,
+            "operations": 1,
+            "rate_sat_per_kvb": 140316,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 29888,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 30132,
+            "operations": 1,
+            "rate_sat_per_kvb": 141464,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 30132,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 30377,
+            "operations": 1,
+            "rate_sat_per_kvb": 142612,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 30377,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 30621,
+            "operations": 1,
+            "rate_sat_per_kvb": 143760,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 30621,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 30866,
+            "operations": 1,
+            "rate_sat_per_kvb": 144908,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 30866,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 31110,
+            "operations": 1,
+            "rate_sat_per_kvb": 146056,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 31110,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 31355,
+            "operations": 1,
+            "rate_sat_per_kvb": 147204,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 31355,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 31599,
+            "operations": 1,
+            "rate_sat_per_kvb": 148352,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 31599,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 31844,
+            "operations": 1,
+            "rate_sat_per_kvb": 149500,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 31844,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 32089,
+            "operations": 1,
+            "rate_sat_per_kvb": 150648,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 32089,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 32333,
+            "operations": 1,
+            "rate_sat_per_kvb": 151796,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 32333,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 32578,
+            "operations": 1,
+            "rate_sat_per_kvb": 152944,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 32578,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 32822,
+            "operations": 1,
+            "rate_sat_per_kvb": 154092,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 32822,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 33067,
+            "operations": 1,
+            "rate_sat_per_kvb": 155240,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 33067,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 33311,
+            "operations": 1,
+            "rate_sat_per_kvb": 156388,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 33311,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 33556,
+            "operations": 1,
+            "rate_sat_per_kvb": 157536,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 33556,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 33800,
+            "operations": 1,
+            "rate_sat_per_kvb": 158684,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 33800,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 34045,
+            "operations": 1,
+            "rate_sat_per_kvb": 159832,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 34045,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 34289,
+            "operations": 1,
+            "rate_sat_per_kvb": 160980,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 34289,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 34534,
+            "operations": 1,
+            "rate_sat_per_kvb": 162128,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 34534,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 34778,
+            "operations": 1,
+            "rate_sat_per_kvb": 163276,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 34778,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 35023,
+            "operations": 1,
+            "rate_sat_per_kvb": 164424,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 35023,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 35267,
+            "operations": 1,
+            "rate_sat_per_kvb": 165572,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 35267,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 35512,
+            "operations": 1,
+            "rate_sat_per_kvb": 166720,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 35512,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 35756,
+            "operations": 1,
+            "rate_sat_per_kvb": 167868,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 35756,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 36001,
+            "operations": 1,
+            "rate_sat_per_kvb": 169016,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 36001,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 36245,
+            "operations": 1,
+            "rate_sat_per_kvb": 170164,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 36245,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 36490,
+            "operations": 1,
+            "rate_sat_per_kvb": 171312,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 36490,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 36734,
+            "operations": 1,
+            "rate_sat_per_kvb": 172460,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 36734,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 36979,
+            "operations": 1,
+            "rate_sat_per_kvb": 173608,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 36979,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 37224,
+            "operations": 1,
+            "rate_sat_per_kvb": 174756,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 37224,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 37468,
+            "operations": 1,
+            "rate_sat_per_kvb": 175904,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 37468,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 37713,
+            "operations": 1,
+            "rate_sat_per_kvb": 177052,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 37713,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 37957,
+            "operations": 1,
+            "rate_sat_per_kvb": 178200,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 37957,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 38202,
+            "operations": 1,
+            "rate_sat_per_kvb": 179348,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 38202,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 38446,
+            "operations": 1,
+            "rate_sat_per_kvb": 180496,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 38446,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 38691,
+            "operations": 1,
+            "rate_sat_per_kvb": 181644,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 38691,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 38935,
+            "operations": 1,
+            "rate_sat_per_kvb": 182792,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 38935,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 39180,
+            "operations": 1,
+            "rate_sat_per_kvb": 183940,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 39180,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 39424,
+            "operations": 1,
+            "rate_sat_per_kvb": 185088,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 39424,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 39669,
+            "operations": 1,
+            "rate_sat_per_kvb": 186236,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 39669,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 39913,
+            "operations": 1,
+            "rate_sat_per_kvb": 187384,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 39913,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 40158,
+            "operations": 1,
+            "rate_sat_per_kvb": 188532,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 40158,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 40402,
+            "operations": 1,
+            "rate_sat_per_kvb": 189680,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 40402,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 40647,
+            "operations": 1,
+            "rate_sat_per_kvb": 190828,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 40647,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 40891,
+            "operations": 1,
+            "rate_sat_per_kvb": 191976,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 40891,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 41136,
+            "operations": 1,
+            "rate_sat_per_kvb": 193124,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 41136,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 41380,
+            "operations": 1,
+            "rate_sat_per_kvb": 194272,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 41380,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 41625,
+            "operations": 1,
+            "rate_sat_per_kvb": 195420,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 41625,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 41869,
+            "operations": 1,
+            "rate_sat_per_kvb": 196568,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 41869,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 42114,
+            "operations": 1,
+            "rate_sat_per_kvb": 197716,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 42114,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 42359,
+            "operations": 1,
+            "rate_sat_per_kvb": 198864,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 42359,
+            "transaction": "REGISTER",
+            "vsize": 213
+          }
+        ],
+        "minimum_basis": "TDS_8_10_COUNT",
+        "minimum_operations": 10,
+        "operations": 168,
+        "subtotal_sat": 3686052
+      },
+      {
+        "component": "BEAT_OCCURRENCES",
+        "lines": [
+          {
+            "fee_per_operation_sat": 1578,
+            "operations": 60,
+            "rate_sat_per_kvb": 6000,
+            "role": "OCCURRENCE",
+            "subtotal_sat": 94680,
+            "transaction": "BEAT",
+            "vsize": 263
+          }
+        ],
+        "minimum_basis": "TDS_8_10_COUNT",
+        "minimum_operations": 20,
+        "operations": 60,
+        "subtotal_sat": 94680
+      },
+      {
+        "component": "BEAT_REPLACEMENTS",
+        "ladder": {
+          "form": "STEP",
+          "step_sat_per_kvb": 2140
+        },
+        "lines": [
+          {
+            "fee_per_operation_sat": 2141,
+            "operations": 1,
+            "rate_sat_per_kvb": 8140,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 2141,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 2704,
+            "operations": 1,
+            "rate_sat_per_kvb": 10280,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 2704,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 3267,
+            "operations": 1,
+            "rate_sat_per_kvb": 12420,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 3267,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 3830,
+            "operations": 1,
+            "rate_sat_per_kvb": 14560,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 3830,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 4393,
+            "operations": 1,
+            "rate_sat_per_kvb": 16700,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 4393,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 4955,
+            "operations": 1,
+            "rate_sat_per_kvb": 18840,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 4955,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 5518,
+            "operations": 1,
+            "rate_sat_per_kvb": 20980,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 5518,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 6081,
+            "operations": 1,
+            "rate_sat_per_kvb": 23120,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 6081,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 6644,
+            "operations": 1,
+            "rate_sat_per_kvb": 25260,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 6644,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 7207,
+            "operations": 1,
+            "rate_sat_per_kvb": 27400,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 7207,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 7770,
+            "operations": 1,
+            "rate_sat_per_kvb": 29540,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 7770,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 8332,
+            "operations": 1,
+            "rate_sat_per_kvb": 31680,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 8332,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 8895,
+            "operations": 1,
+            "rate_sat_per_kvb": 33820,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 8895,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 9458,
+            "operations": 1,
+            "rate_sat_per_kvb": 35960,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 9458,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 10021,
+            "operations": 1,
+            "rate_sat_per_kvb": 38100,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 10021,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 10584,
+            "operations": 1,
+            "rate_sat_per_kvb": 40240,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 10584,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 11146,
+            "operations": 1,
+            "rate_sat_per_kvb": 42380,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 11146,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 11709,
+            "operations": 1,
+            "rate_sat_per_kvb": 44520,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 11709,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 12272,
+            "operations": 1,
+            "rate_sat_per_kvb": 46660,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 12272,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 12835,
+            "operations": 1,
+            "rate_sat_per_kvb": 48800,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 12835,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 13398,
+            "operations": 1,
+            "rate_sat_per_kvb": 50940,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 13398,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 13961,
+            "operations": 1,
+            "rate_sat_per_kvb": 53080,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 13961,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 14523,
+            "operations": 1,
+            "rate_sat_per_kvb": 55220,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 14523,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 15086,
+            "operations": 1,
+            "rate_sat_per_kvb": 57360,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 15086,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 15649,
+            "operations": 1,
+            "rate_sat_per_kvb": 59500,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 15649,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 16212,
+            "operations": 1,
+            "rate_sat_per_kvb": 61640,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 16212,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 16775,
+            "operations": 1,
+            "rate_sat_per_kvb": 63780,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 16775,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 17337,
+            "operations": 1,
+            "rate_sat_per_kvb": 65920,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 17337,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 17900,
+            "operations": 1,
+            "rate_sat_per_kvb": 68060,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 17900,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 18463,
+            "operations": 1,
+            "rate_sat_per_kvb": 70200,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 18463,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 19026,
+            "operations": 1,
+            "rate_sat_per_kvb": 72340,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 19026,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 19589,
+            "operations": 1,
+            "rate_sat_per_kvb": 74480,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 19589,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 20152,
+            "operations": 1,
+            "rate_sat_per_kvb": 76620,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 20152,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 20714,
+            "operations": 1,
+            "rate_sat_per_kvb": 78760,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 20714,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 21277,
+            "operations": 1,
+            "rate_sat_per_kvb": 80900,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 21277,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 21840,
+            "operations": 1,
+            "rate_sat_per_kvb": 83040,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 21840,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 22403,
+            "operations": 1,
+            "rate_sat_per_kvb": 85180,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 22403,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 22966,
+            "operations": 1,
+            "rate_sat_per_kvb": 87320,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 22966,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 23528,
+            "operations": 1,
+            "rate_sat_per_kvb": 89460,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 23528,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 24091,
+            "operations": 1,
+            "rate_sat_per_kvb": 91600,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 24091,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 24654,
+            "operations": 1,
+            "rate_sat_per_kvb": 93740,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 24654,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 25217,
+            "operations": 1,
+            "rate_sat_per_kvb": 95880,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 25217,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 25780,
+            "operations": 1,
+            "rate_sat_per_kvb": 98020,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 25780,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 26343,
+            "operations": 1,
+            "rate_sat_per_kvb": 100160,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 26343,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 26905,
+            "operations": 1,
+            "rate_sat_per_kvb": 102300,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 26905,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 27468,
+            "operations": 1,
+            "rate_sat_per_kvb": 104440,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 27468,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 28031,
+            "operations": 1,
+            "rate_sat_per_kvb": 106580,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 28031,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 28594,
+            "operations": 1,
+            "rate_sat_per_kvb": 108720,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 28594,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 29157,
+            "operations": 1,
+            "rate_sat_per_kvb": 110860,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 29157,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 29719,
+            "operations": 1,
+            "rate_sat_per_kvb": 113000,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 29719,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 30282,
+            "operations": 1,
+            "rate_sat_per_kvb": 115140,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 30282,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 30845,
+            "operations": 1,
+            "rate_sat_per_kvb": 117280,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 30845,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 31408,
+            "operations": 1,
+            "rate_sat_per_kvb": 119420,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 31408,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 31971,
+            "operations": 1,
+            "rate_sat_per_kvb": 121560,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 31971,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 32534,
+            "operations": 1,
+            "rate_sat_per_kvb": 123700,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 32534,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 33096,
+            "operations": 1,
+            "rate_sat_per_kvb": 125840,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 33096,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 33659,
+            "operations": 1,
+            "rate_sat_per_kvb": 127980,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 33659,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 34222,
+            "operations": 1,
+            "rate_sat_per_kvb": 130120,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 34222,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 34785,
+            "operations": 1,
+            "rate_sat_per_kvb": 132260,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 34785,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 35348,
+            "operations": 1,
+            "rate_sat_per_kvb": 134400,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 35348,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 35911,
+            "operations": 1,
+            "rate_sat_per_kvb": 136540,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 35911,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 36473,
+            "operations": 1,
+            "rate_sat_per_kvb": 138680,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 36473,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 37036,
+            "operations": 1,
+            "rate_sat_per_kvb": 140820,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 37036,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 37599,
+            "operations": 1,
+            "rate_sat_per_kvb": 142960,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 37599,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 38162,
+            "operations": 1,
+            "rate_sat_per_kvb": 145100,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 38162,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 38725,
+            "operations": 1,
+            "rate_sat_per_kvb": 147240,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 38725,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 39287,
+            "operations": 1,
+            "rate_sat_per_kvb": 149380,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 39287,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 39850,
+            "operations": 1,
+            "rate_sat_per_kvb": 151520,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 39850,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 40413,
+            "operations": 1,
+            "rate_sat_per_kvb": 153660,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 40413,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 40976,
+            "operations": 1,
+            "rate_sat_per_kvb": 155800,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 40976,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 41539,
+            "operations": 1,
+            "rate_sat_per_kvb": 157940,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 41539,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 42102,
+            "operations": 1,
+            "rate_sat_per_kvb": 160080,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 42102,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 42664,
+            "operations": 1,
+            "rate_sat_per_kvb": 162220,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 42664,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 43227,
+            "operations": 1,
+            "rate_sat_per_kvb": 164360,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 43227,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 43790,
+            "operations": 1,
+            "rate_sat_per_kvb": 166500,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 43790,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 44353,
+            "operations": 1,
+            "rate_sat_per_kvb": 168640,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 44353,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 44916,
+            "operations": 1,
+            "rate_sat_per_kvb": 170780,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 44916,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 45478,
+            "operations": 1,
+            "rate_sat_per_kvb": 172920,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 45478,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 46041,
+            "operations": 1,
+            "rate_sat_per_kvb": 175060,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 46041,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 46604,
+            "operations": 1,
+            "rate_sat_per_kvb": 177200,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 46604,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 47167,
+            "operations": 1,
+            "rate_sat_per_kvb": 179340,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 47167,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 47730,
+            "operations": 1,
+            "rate_sat_per_kvb": 181480,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 47730,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 48293,
+            "operations": 1,
+            "rate_sat_per_kvb": 183620,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 48293,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 48855,
+            "operations": 1,
+            "rate_sat_per_kvb": 185760,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 48855,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 49418,
+            "operations": 1,
+            "rate_sat_per_kvb": 187900,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 49418,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 49981,
+            "operations": 1,
+            "rate_sat_per_kvb": 190040,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 49981,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 50544,
+            "operations": 1,
+            "rate_sat_per_kvb": 192180,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 50544,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 51107,
+            "operations": 1,
+            "rate_sat_per_kvb": 194320,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 51107,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 51669,
+            "operations": 1,
+            "rate_sat_per_kvb": 196460,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 51669,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 52232,
+            "operations": 1,
+            "rate_sat_per_kvb": 198600,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 52232,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 52795,
+            "operations": 1,
+            "rate_sat_per_kvb": 200740,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 52795,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 53358,
+            "operations": 1,
+            "rate_sat_per_kvb": 202880,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 53358,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 53921,
+            "operations": 1,
+            "rate_sat_per_kvb": 205020,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 53921,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 54484,
+            "operations": 1,
+            "rate_sat_per_kvb": 207160,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 54484,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 55046,
+            "operations": 1,
+            "rate_sat_per_kvb": 209300,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 55046,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 55609,
+            "operations": 1,
+            "rate_sat_per_kvb": 211440,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 55609,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 56172,
+            "operations": 1,
+            "rate_sat_per_kvb": 213580,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 56172,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 56735,
+            "operations": 1,
+            "rate_sat_per_kvb": 215720,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 56735,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 57298,
+            "operations": 1,
+            "rate_sat_per_kvb": 217860,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 57298,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 57860,
+            "operations": 1,
+            "rate_sat_per_kvb": 220000,
+            "role": "REPLACEMENT",
+            "subtotal_sat": 57860,
+            "transaction": "BEAT",
+            "vsize": 263
+          }
+        ],
+        "minimum_basis": "TDS_8_10_COUNT",
+        "minimum_operations": 20,
+        "operations": 100,
+        "subtotal_sat": 3000090
+      },
+      {
+        "component": "TWO_NODE_RECOVERY",
+        "lines": [
+          {
+            "fee_per_operation_sat": 24297,
+            "operations": 2,
+            "rate_sat_per_kvb": 114068,
+            "role": "REBUILD",
+            "subtotal_sat": 48594,
+            "transaction": "REGISTER",
+            "vsize": 213
+          },
+          {
+            "fee_per_operation_sat": 30000,
+            "operations": 2,
+            "rate_sat_per_kvb": 114068,
+            "role": "REBUILD",
+            "subtotal_sat": 60000,
+            "transaction": "BEAT",
+            "vsize": 263
+          }
+        ],
+        "minimum_basis": "ONE_REGISTER_AND_ONE_BEAT_REBUILD_PER_NODE",
+        "minimum_operations": 4,
+        "operations": 4,
+        "subtotal_sat": 108594
+      },
+      {
+        "component": "PROLONGED_HIGH_FEE",
+        "lines": [
+          {
+            "fee_per_operation_sat": 30000,
+            "operations": 1,
+            "rate_sat_per_kvb": 114068,
+            "role": "INCIDENT_BEAT",
+            "subtotal_sat": 30000,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 30000,
+            "operations": 1,
+            "rate_sat_per_kvb": 114068,
+            "role": "INCIDENT_BEAT",
+            "subtotal_sat": 30000,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 30000,
+            "operations": 1,
+            "rate_sat_per_kvb": 114068,
+            "role": "INCIDENT_BEAT",
+            "subtotal_sat": 30000,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 30000,
+            "operations": 1,
+            "rate_sat_per_kvb": 114068,
+            "role": "INCIDENT_BEAT",
+            "subtotal_sat": 30000,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 30000,
+            "operations": 1,
+            "rate_sat_per_kvb": 114068,
+            "role": "INCIDENT_BEAT",
+            "subtotal_sat": 30000,
+            "transaction": "BEAT",
+            "vsize": 263
+          },
+          {
+            "fee_per_operation_sat": 24297,
+            "operations": 1,
+            "rate_sat_per_kvb": 114068,
+            "role": "INCIDENT_REGISTER",
+            "subtotal_sat": 24297,
+            "transaction": "REGISTER",
+            "vsize": 213
+          }
+        ],
+        "minimum_basis": "TWO_BEATS_PEAK_ABOVE_BASE_AND_ONE_REGISTER_AT_PEAK",
+        "minimum_operations": 3,
+        "operations": 6,
+        "scenario": {
+          "beat_occurrences": 5,
+          "horizon_blocks": 4320,
+          "rate_trajectory_sat_per_kvb": [
+            114068,
+            114068,
+            114068,
+            114068,
+            114068
+          ],
+          "register_rate": "TRAJECTORY_PEAK",
+          "replacement_step_sat_per_kvb": 0,
+          "replacements_per_occurrence": 0
+        },
+        "subtotal_sat": 174297
+      }
+    ],
+    "mode": "FEE_RESERVE_PLAN",
+    "per_attempt_maximum_fee_sat": {
+      "beat": 57860,
+      "register": 42359
+    },
+    "plan_schema": "BITAGI_CT_FEE_RESERVE_PLAN_V2",
+    "planning_non_claims": [
+      "FEE_OBSERVATION",
+      "FUTURE_FEE_CONDITIONS",
+      "RESERVE_ADEQUACY",
+      "INCLUSION_GUARANTEE",
+      "FEE_FUEL_AVAILABILITY"
+    ],
+    "planning_only": true,
+    "rate_inputs": {
+      "base_rate_rule": "MAX(CONSERVATIVE_ESTIMATESMARTFEE_OF_BOTH_NODES, RECENT_BLOCK_PERCENTILE_POLICY, OPERATOR_FLOOR, EMERGENCY_FLOOR)",
+      "base_rate_sat_per_kvb": 6000,
+      "emergency_floor_sat_per_kvb": 1000,
+      "estimatesmartfee": {
+        "conservative_sat_per_kvb": 689,
+        "horizon_blocks": 6,
+        "mode": "CONSERVATIVE",
+        "node_a_sat_per_kvb": 689,
+        "node_b_sat_per_kvb": 689
+      },
+      "operator_floor_sat_per_kvb": 1000,
+      "recent_block_percentiles": {
+        "blocks": [
+          {
+            "block_hash_internal": "50bd1d6a1d098479639b56de1171b6449e3fac730d1b00000000000000000000",
+            "feerate_percentiles_sat_per_vbyte": [
+              0,
+              0,
+              1,
+              2,
+              3
+            ]
+          },
+          {
+            "block_hash_internal": "fd97da64b01fd12fa51954bb1603ad903033f3cd2dcd01000000000000000000",
+            "feerate_percentiles_sat_per_vbyte": [
+              0,
+              0,
+              0,
+              1,
+              3
+            ]
+          },
+          {
+            "block_hash_internal": "98dfcc45b6ca1ad6480626828519fe2b8c7e22c36aaa00000000000000000000",
+            "feerate_percentiles_sat_per_vbyte": [
+              1,
+              1,
+              2,
+              3,
+              5
+            ]
+          },
+          {
+            "block_hash_internal": "c8b8c9a2e09f15f4c36a3772c82efa6b70cc4c6e796d00000000000000000000",
+            "feerate_percentiles_sat_per_vbyte": [
+              2,
+              3,
+              4,
+              5,
+              7
+            ]
+          },
+          {
+            "block_hash_internal": "bb8c7b3e85b0ec2184ac5f577e63963c152697332ec201000000000000000000",
+            "feerate_percentiles_sat_per_vbyte": [
+              1,
+              1,
+              1,
+              2,
+              2
+            ]
+          },
+          {
+            "block_hash_internal": "2ec270903572c70719ec43660f43279639b6f820ef7100000000000000000000",
+            "feerate_percentiles_sat_per_vbyte": [
+              3,
+              4,
+              4,
+              6,
+              9
+            ]
+          }
+        ],
+        "policy": "MAX_OVER_6_BLOCKS_OF_75TH_WEIGHTED_PERCENTILE",
+        "rate_sat_per_kvb": 6000
+      }
+    },
+    "rate_source": "PLANNING_SCENARIO",
+    "rates_exceeding_admission_cap": [],
+    "rounding": "PER_OPERATION_FEE_SAT=CEIL(RATE_SAT_PER_KVB*VSIZE/1000); LINE_SAT=OPERATIONS*PER_OPERATION_FEE_SAT; COMPONENT_SAT=SUM(LINE_SAT); TOTAL_SAT=SUM(COMPONENT_SAT); CHECKED_U128_TO_U64; TOTAL_SAT<=MAX_MONEY",
+    "total_reserve_sat": 7094385,
+    "transactions": {
+      "beat": {
+        "inputs": 2,
+        "txid_internal": "c23f2789f1625e125ba423ea385d37ff74e816a226d34cbdae31168a3568dfbc",
+        "vsize": 263,
+        "vsize_source": "UNSIGNED_TX_TAPROOT_KEYPATH_ESTIMATE",
+        "weight_rule": "WEIGHT=4*NON_WITNESS_BYTES+2+66*INPUTS; VSIZE=CEIL(WEIGHT/4)",
+        "weight_wu": 1050
+      },
+      "register": {
+        "inputs": 1,
+        "txid_internal": "c9820bcf05ae6e6283682c913efbbb7a02a47f6a3073936d01828b074693a2ab",
+        "vsize": 213,
+        "vsize_source": "UNSIGNED_TX_TAPROOT_KEYPATH_ESTIMATE",
+        "weight_rule": "WEIGHT=4*NON_WITNESS_BYTES+2+66*INPUTS; VSIZE=CEIL(WEIGHT/4)",
+        "weight_wu": 852
+      }
+    },
+    "units": "SAT_PER_KVB"
+  },
+  "non_claims": [
+    "NODE_ADMISSION",
+    "INCLUSION",
+    "OPERATOR_CONFIRMATION",
+    "PROVENANCE",
+    "SIGNING",
+    "RELAY",
+    "BROADCAST",
+    "OPERATIONAL_ADEQUACY"
+  ],
+  "release_class": "T",
+  "result": "FEE_RESERVE_PLANNED_FROM_PLANNING_SCENARIO",
+  "schema_version": "BITAGI_CLASS_T_COMMAND_RESULT_V2"
+}

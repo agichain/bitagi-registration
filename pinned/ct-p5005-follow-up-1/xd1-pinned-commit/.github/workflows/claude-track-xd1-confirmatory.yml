@@ -1,0 +1,473 @@
+name: claude-track-xd1-confirmatory
+
+# XD-1 confirmatory harness (A's decisions XA1-XA13, 2026-11-10; docs/claude-track/formats/XD1_EVENT_CHAIN_V3.md).
+# One dispatch is one session of 1-5 consecutive XD-1 runs on the VPS runner, each with the Founder's live
+# broadcast decision typed at the VPS console (045b section 5.1, :1099; XA1, XA2). Two modes, one input:
+# CONFIRMATORY (the 20 registered runs, in sessions, from a pinned attempt tag ct-xd1-c-a<N> at the
+# registration's pinned commit, XA3) and EXPLORATORY (the live-decision pilot, N = 1-5 from run 1, XA7: from main,
+# or from such a tag with the TEST_ONLY pilot registration so that it runs the CONFIRMATORY read paths, A's C2; its
+# results are labelled EXPLORATORY and never count). The EXPLORATORY scripted collection stays in
+# claude-track-xd1.yml, unchanged (XA11).
+#
+# Jobs, each with its own minimal permissions (the workflow grants none):
+# - exclusive (hosted, actions read): no run of the 7a, VPS checks or this workflow waits or runs (XA10; the 7a
+#   workflow is not edited; A dispatches no 7a or VPS checks run during a session).
+# - plan (hosted, contents and actions read): tools/claude_track_xd1_collect.py plan-v3 (event, attempt 1, ref,
+#   expected head, session bounds and budget; from a tag also the registration bytes read from main and hashed
+#   against the input, its pinned commit on main's first-parent chain and the XD-1 tool hashes it registers) and
+#   declare-v3; then claude_track_xd1_confirm.py continuity over this workflow's dispatch listing (CONFIRMATORY:
+#   the session is the next one after the counted sessions; EXPLORATORY: the pilot's own dispatch). It archives
+#   the dispatched tree for the VPS job.
+# - slice (the VPS runner label, no token): the tree from the plan job's artifact (its SHA-256 checked), the
+#   console directory, Core, the workers, T4-2, the session-start marker uploaded before the first run, then the
+#   runs, each under the supervisor with the live decision; the records upload always. One session per dispatch
+#   is one VPS job: K = 1. The Founder's console is never a file of this job: the Founder runs the root-owned copy
+#   installed once from merged main, as the runner account on its own pseudo-terminal (VPS prep document 3.3).
+# - report (hosted, contents and actions read): the dispatch listing and every counted session's artifacts and
+#   slice job start (XA1, XA4; EXPLORATORY: the pilot's own, with the continuity check over it, C2), then
+#   claude_track_xd1_confirm.py report: the collection report V3 with the verdict (XA8) and, CONFIRMATORY, the
+#   observation list (XA9), printed in the log and uploaded. This hosted job is where the final verification runs
+#   (CR-21 condition 4; what it can and cannot see from the VPS is in the unit note).
+#
+# Class T Regtest; TEST_ONLY keys only; release_authorization NONE. Not a required check. Never dispatched by a
+# pull request.
+run-name: ${{ format('xd1 {0} runs {1}-{2} registration {3}', inputs.mode, inputs.first_run, inputs.last_run, inputs.registration_sha256 || 'none') }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: CONFIRMATORY (registered runs, from a ct-xd1-c-aN tag) or EXPLORATORY (the live-decision pilot, from main or a ct-xd1-c-aN tag)
+        required: true
+        type: choice
+        options: [CONFIRMATORY, EXPLORATORY]
+      first_run:
+        description: The session's first run (CONFIRMATORY, the run after the counted sessions; EXPLORATORY, 1)
+        required: true
+        type: number
+      last_run:
+        description: The session's last run (at most five runs per session)
+        required: true
+        type: number
+      expected_head:
+        description: The exact commit this dispatch runs (from a tag, the registration's or the pilot file's pinned commit)
+        required: true
+        type: string
+      registration:
+        description: CONFIRMATORY, the registration file's path on main (a pilot from a tag, the TEST_ONLY pilot file)
+        required: false
+        type: string
+      registration_sha256:
+        description: CONFIRMATORY, the SHA-256 of the registration's bytes (a pilot from a tag, the TEST_ONLY pilot file's)
+        required: false
+        type: string
+
+permissions: {}
+
+# CR-22: a dispatch never cancels another. One VPS run at a time is the exclusive job's.
+concurrency:
+  group: claude-track-xd1-confirmatory-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  exclusive:
+    name: XD-1 session exclusive (hosted)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+    steps:
+      - name: Refuse while another VPS run waits or runs
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for wf in claude-track-7a.yml claude-track-vps-checks.yml claude-track-xd1-confirmatory.yml; do
+            for status in queued in_progress waiting requested pending; do
+              ids="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/$wf/runs?event=workflow_dispatch&status=$status&per_page=100" \
+                | jq -r '.workflow_runs | if type == "array" then .[].id else error("runs") end')" \
+                || { echo "xd1c: RUNS_READ $wf $status" >&2; exit 3; }
+              others="$(printf '%s\n' "$ids" | grep -cvx -e "$GITHUB_RUN_ID" -e '' || true)"
+              [ "$others" = 0 ] || { echo "xd1c: OTHER_RUN $wf $status" >&2; exit 2; }
+            done
+          done
+          echo "xd1c: no other VPS run"
+
+  plan:
+    name: XD-1 session plan (hosted)
+    needs: exclusive
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      source_sha256: ${{ steps.source.outputs.sha256 }}
+    steps:
+      - name: Refuse a re-run
+        run: test "$GITHUB_RUN_ATTEMPT" = 1
+
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Verify the exact dispatched head
+        env:
+          EXPECTED_HEAD_SHA: ${{ github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD_SHA"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13.5'
+
+      # plan-v3's values go to this step's outputs (steps.session.outputs) for the record; the jobs after read the
+      # declaration artifact, not these.
+      - name: Plan the session and write its declaration
+        id: session
+        env:
+          XD1_MODE: ${{ inputs.mode }}
+          XD1_FIRST: ${{ inputs.first_run }}
+          XD1_LAST: ${{ inputs.last_run }}
+          XD1_EXPECTED_HEAD: ${{ inputs.expected_head }}
+          XD1_REGISTRATION: ${{ inputs.registration }}
+          XD1_REGISTRATION_SHA256: ${{ inputs.registration_sha256 }}
+        run: |
+          set -euo pipefail
+          mkdir -p target/xd1c
+          python3 tools/claude_track_xd1_collect.py plan-v3 --mode "$XD1_MODE" --first-run "$XD1_FIRST" \
+            --last-run "$XD1_LAST" --expected-head "$XD1_EXPECTED_HEAD" --registration "$XD1_REGISTRATION" \
+            --registration-sha256 "$XD1_REGISTRATION_SHA256" --github-output "$GITHUB_OUTPUT"
+          registration=""   # an EXPLORATORY declaration names no registration, the pilot's TEST_ONLY file included
+          if [ "$XD1_MODE" = CONFIRMATORY ]; then registration="$XD1_REGISTRATION_SHA256"; fi
+          python3 tools/claude_track_xd1_collect.py declare-v3 --mode "$XD1_MODE" --first-run "$XD1_FIRST" \
+            --last-run "$XD1_LAST" --registration-sha256 "$registration" --output target/xd1c/declaration.json
+
+      # GET requests only: this workflow's dispatch listing (every page) and each prior session's artifact listing.
+      # Both modes (A's C2: the pilot runs these reads over its own dispatch).
+      - name: Refuse a session that is not the next one
+        env:
+          GH_TOKEN: ${{ github.token }}
+          XD1_MODE: ${{ inputs.mode }}
+          XD1_FIRST: ${{ inputs.first_run }}
+          XD1_LAST: ${{ inputs.last_run }}
+          XD1_REGISTRATION_SHA256: ${{ inputs.registration_sha256 }}
+        run: |
+          set -euo pipefail
+          registration=""
+          if [ "$XD1_MODE" = CONFIRMATORY ]; then registration="$XD1_REGISTRATION_SHA256"; fi
+          tool=tools/claude_track_xd1_confirm.py
+          listing=target/xd1c/listing
+          sessions=target/xd1c/sessions
+          mkdir -p "$listing" "$sessions"
+          query="event=workflow_dispatch&per_page=100"
+          base="repos/$GITHUB_REPOSITORY/actions/workflows/claude-track-xd1-confirmatory.yml/runs?$query"
+          gh api "$base&page=1" > "$listing/runs-1.json"
+          pages=$(python3 "$tool" pages --dir "$listing" | python3 -c 'import json,sys; print(json.load(sys.stdin)["pages"])')
+          for page in $(seq 2 "$pages"); do
+            gh api "$base&page=$page" > "$listing/runs-$page.json"
+          done
+          runs=$(python3 "$tool" runs --mode "$XD1_MODE" --registration-sha256 "$registration" \
+            --listing "$listing" --run-id "$GITHUB_RUN_ID" \
+            | python3 -c 'import json,sys; print(" ".join(map(str, json.load(sys.stdin)["runs"])))')
+          for id in $runs; do
+            if [ "$id" = "$GITHUB_RUN_ID" ]; then continue; fi
+            mkdir "$sessions/$id"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id/artifacts?per_page=100" > "$sessions/$id/artifacts.json"
+          done
+          python3 "$tool" continuity --mode "$XD1_MODE" --registration-sha256 "$registration" \
+            --listing "$listing" --sessions "$sessions" --run-id "$GITHUB_RUN_ID" --head-sha "$GITHUB_SHA" \
+            --first-run "$XD1_FIRST" --last-run "$XD1_LAST"
+
+      # The VPS job holds no token, so it takes the dispatched tree from this job: what its build, its runs and its
+      # T4-2 tests read (evidence/ and the other records stay out).
+      - name: Archive the dispatched tree for the VPS job
+        id: source
+        run: |
+          set -euo pipefail
+          git archive --format=tar -o target/xd1c/source.tar HEAD -- .github canonical crates docs/tasks \
+            docs/claude-track/formats docs/claude-track/plans/CT-P8-003-PREP_NEUTRAL_FORMATS_EN.md reference tests \
+            tools Cargo.toml Cargo.lock rust-toolchain.toml
+          sha="$(sha256sum target/xd1c/source.tar | cut -d ' ' -f 1)"
+          echo "sha256=$sha" >> "$GITHUB_OUTPUT"
+          echo "xd1c: source $sha"
+
+      - name: Upload the declaration
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: xd1c-declaration
+          path: target/xd1c/declaration.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Upload the tree
+        timeout-minutes: 10
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: xd1c-source
+          path: target/xd1c/source.tar
+          retention-days: 3
+          if-no-files-found: error
+
+  slice:
+    name: XD-1 session slice (VPS)
+    needs: plan
+    runs-on: bitagi-ct7a-vps
+    timeout-minutes: 330
+    permissions: {}
+    steps:
+      - name: Refuse a re-run, another ref or another head
+        shell: bash
+        env:
+          XD1_MODE: ${{ inputs.mode }}
+          XD1_EXPECTED_HEAD: ${{ inputs.expected_head }}
+        run: |
+          [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] || { echo "xd1c: EVENT" >&2; exit 2; }
+          [ "$GITHUB_RUN_ATTEMPT" = 1 ] || { echo "xd1c: RUN_ATTEMPT" >&2; exit 2; }
+          [ "$XD1_EXPECTED_HEAD" = "$GITHUB_SHA" ] || { echo "xd1c: EXPECTED_HEAD" >&2; exit 2; }
+          case "$GITHUB_REF" in
+            refs/tags/ct-xd1-c-a[1-9]|refs/tags/ct-xd1-c-a[1-9][0-9]|refs/tags/ct-xd1-c-a[1-9][0-9][0-9]) ;;
+            refs/heads/main) [ "$XD1_MODE" = EXPLORATORY ] || { echo "xd1c: REF" >&2; exit 2; } ;;
+            *) echo "xd1c: REF" >&2; exit 2 ;;
+          esac
+          echo "XD1_JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Download the dispatched tree
+        timeout-minutes: 10
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: xd1c-source
+          path: ${{ runner.temp }}/xd1c-source
+
+      - name: Unpack the tree after its SHA-256
+        env:
+          SOURCE_SHA256: ${{ needs.plan.outputs.source_sha256 }}
+        run: |
+          set -euo pipefail
+          echo "$SOURCE_SHA256  $RUNNER_TEMP/xd1c-source/source.tar" | sha256sum -c -
+          tar -xf "$RUNNER_TEMP/xd1c-source/source.tar"
+          rm -f "$RUNNER_TEMP/xd1c-source/source.tar"
+
+      - name: Download the declaration
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: xd1c-declaration
+          path: target/xd1c
+
+      # The prompt and the console FIFO live here. The Founder's console is the root-owned copy installed once from
+      # merged main, run at the VPS console as this account on its own pseudo-terminal (V3 section 4; VPS prep 3.3):
+      #   runuser -P -u runner01 -- python3 -I /usr/local/lib/bitagi-xd1/claude_track_xd1_decide.py
+      # Nothing of this job is ever run by root. The tree's copies are hashed here for the record only.
+      - name: Make the console directory
+        run: |
+          set -euo pipefail
+          console="$HOME/xd1-console"
+          mkdir -m 0700 "$console"
+          sha256sum tools/claude_track_xd1_decide.py tools/claude_track_exit.py
+          echo "XD1_CONSOLE=$console" >> "$GITHUB_ENV"
+          echo "xd1c: console $console"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13.5'
+
+      # Archive and bitcoind hashes are claude-track-xd1.yml's.
+      - name: Fetch and verify Bitcoin Core 31.1 and 30.3
+        timeout-minutes: 10
+        working-directory: ${{ runner.temp }}
+        run: |
+          set -euo pipefail
+          fetch() {
+            name="bitcoin-$1-x86_64-linux-gnu.tar.gz"
+            curl -fsSL --retry 3 -o "$name" "https://bitcoincore.org/bin/bitcoin-core-$1/$name"
+            echo "$2  $name" | sha256sum -c -
+            tar -xzf "$name"
+            echo "$3  bitcoin-$1/bin/bitcoind" | sha256sum -c -
+          }
+          fetch 31.1 b80d9c3e04da78fb6f0569685673418cf686fadba9042d926d13fb87ff503f9e 986e63b3c8770f08d0059820ad3dd085d1ab9e1bea23946c243f858a06888a08
+          fetch 30.3 4753cd70416c629a2090503e8545a3c05e94a0f5037f8fb97b4c35c6e1afee0e 30d4fa871a5447be1f57f195c3fd021c6fa44f920693aa4650e61769326edca8
+
+      - name: Install pinned Rust toolchain
+        timeout-minutes: 15
+        run: rustup show active-toolchain || rustup toolchain install
+
+      # The workers are built before the runs, so the cap times the run, not the build.
+      - name: Build the host and signer workers
+        timeout-minutes: 90
+        env:
+          BITAGI_E3D3_OFFLINE_RUSTFLAGS: --cfg bitagi_offline_build
+        run: |
+          set -euo pipefail
+          cargo test --locked -q -p bitagi-launch-host --test two_node_launch_accept --no-run
+          RUSTFLAGS="$BITAGI_E3D3_OFFLINE_RUSTFLAGS" CARGO_TARGET_DIR=target/offline-build \
+            cargo test --locked -q -p bitagi-signer --features offline-ceremony --test launch_host_e2e_sign --no-run
+
+      # T4-2 on this tree before the first run; under METRIC 045B it decides nothing and fills the environment
+      # row's T4-2 PASS SHA (XA6, 045b :1098).
+      - name: Run the T4-2 tests and write the session's T4-2 record
+        timeout-minutes: 20
+        run: |
+          set -euo pipefail
+          mkdir -p target/xd1c/session/records
+          if timeout 900 python3 -m unittest tests.claude_track.test_xd1_driver_tool tests.claude_track.test_xd1_supervisor_tool \
+              tests.claude_track.test_xd1_check_tool tests.claude_track.test_xd1_check_v2 tests.claude_track.test_xd1_check_v3 \
+              tests.claude_track.test_xd1_live_decision tests.claude_track.test_xd1_decide_tool; then
+            result=PASS
+          else
+            result=FAIL
+          fi
+          python3 tools/claude_track_xd1_collect.py t42-v3 --declaration target/xd1c/declaration.json \
+            --records target/xd1c/session/records --result "$result"
+
+      - name: Refuse a session whose runs do not fit its budget
+        run: |
+          set -euo pipefail
+          python3 tools/claude_track_xd1_collect.py budget-v3 --declaration target/xd1c/declaration.json \
+            --spent-seconds "$(( $(date +%s) - XD1_JOB_START ))"
+
+      - name: Write the session-start marker
+        run: |
+          set -euo pipefail
+          python3 tools/claude_track_xd1_collect.py marker --declaration target/xd1c/declaration.json \
+            --output target/xd1c/marker.json
+
+      # XA1: from here on every run of the session counts; a session without this artifact never started.
+      - name: Upload the session-start marker before the first run
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: xd1c-session-started
+          path: target/xd1c/marker.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Run the session's runs with the Founder's live decision, each under the supervisor
+        timeout-minutes: 90
+        env:
+          BITAGI_E3D3_OFFLINE_RUSTFLAGS: --cfg bitagi_offline_build
+        run: |
+          set -euo pipefail
+          python3 tools/claude_track_xd1_collect.py collect-v3 --declaration target/xd1c/declaration.json \
+            --records target/xd1c/session/records --node-a "$RUNNER_TEMP/bitcoin-31.1/bin" \
+            --node-b "$RUNNER_TEMP/bitcoin-30.3/bin" --work-root target/xd1c/work --console-dir "$XD1_CONSOLE" \
+            | tee target/xd1c/session/collect.json
+
+      - name: Upload the session's records
+        if: always()
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: xd1c-session-records
+          path: target/xd1c/session/
+          retention-days: 90
+          if-no-files-found: warn
+
+  report:
+    name: XD-1 session report (hosted)
+    needs: [plan, slice]
+    if: always() && needs.plan.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Verify the exact dispatched head
+        env:
+          EXPECTED_HEAD_SHA: ${{ github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD_SHA"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13.5'
+
+      # GET requests only, both modes (A's C2): every page of this workflow's dispatch listing, then per run read its
+      # run, its artifact listing, its attempt-1 jobs listing and the zips the tool names (EXPLORATORY: the pilot's
+      # own dispatch, with the continuity check over it).
+      - name: Read the dispatch listing and every session's artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          XD1_MODE: ${{ inputs.mode }}
+          XD1_FIRST: ${{ inputs.first_run }}
+          XD1_LAST: ${{ inputs.last_run }}
+          XD1_REGISTRATION_SHA256: ${{ inputs.registration_sha256 }}
+        run: |
+          set -euo pipefail
+          registration=""
+          if [ "$XD1_MODE" = CONFIRMATORY ]; then registration="$XD1_REGISTRATION_SHA256"; fi
+          tool=tools/claude_track_xd1_confirm.py
+          listing=target/xd1c/listing
+          sessions=target/xd1c/sessions
+          mkdir -p "$listing" "$sessions"
+          query="event=workflow_dispatch&per_page=100"
+          base="repos/$GITHUB_REPOSITORY/actions/workflows/claude-track-xd1-confirmatory.yml/runs?$query"
+          gh api "$base&page=1" > "$listing/runs-1.json"
+          pages=$(python3 "$tool" pages --dir "$listing" | python3 -c 'import json,sys; print(json.load(sys.stdin)["pages"])')
+          for page in $(seq 2 "$pages"); do
+            gh api "$base&page=$page" > "$listing/runs-$page.json"
+          done
+          runs=$(python3 "$tool" runs --mode "$XD1_MODE" --registration-sha256 "$registration" \
+            --listing "$listing" --run-id "$GITHUB_RUN_ID" \
+            | python3 -c 'import json,sys; print(" ".join(map(str, json.load(sys.stdin)["runs"])))')
+          for id in $runs; do
+            dir="$sessions/$id"
+            mkdir "$dir"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id" > "$dir/run.json"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id/artifacts?per_page=100" > "$dir/artifacts.json"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id/attempts/1/jobs?per_page=100" > "$dir/jobs.json"
+            pairs=$(python3 "$tool" downloads --dir "$dir" --run-id "$id" | tee -a /dev/stderr \
+              | python3 -c 'import json,sys; print(" ".join(json.load(sys.stdin)["downloads"]))')
+            for pair in $pairs; do
+              gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/${pair#*:}/zip" > "$dir/${pair%%:*}.zip"
+            done
+          done
+          if [ "$XD1_MODE" = EXPLORATORY ]; then
+            python3 "$tool" continuity --mode EXPLORATORY --listing "$listing" --sessions "$sessions" \
+              --run-id "$GITHUB_RUN_ID" --head-sha "$GITHUB_SHA" --first-run "$XD1_FIRST" --last-run "$XD1_LAST"
+          fi
+
+      - name: Write the collection report and the observation list
+        env:
+          XD1_MODE: ${{ inputs.mode }}
+          XD1_REGISTRATION_SHA256: ${{ inputs.registration_sha256 }}
+        run: |
+          set -euo pipefail
+          registration=""
+          if [ "$XD1_MODE" = CONFIRMATORY ]; then registration="$XD1_REGISTRATION_SHA256"; fi
+          status=0
+          python3 tools/claude_track_xd1_confirm.py report --mode "$XD1_MODE" \
+            --registration-sha256 "$registration" --listing target/xd1c/listing --sessions target/xd1c/sessions \
+            --run-id "$GITHUB_RUN_ID" --head-sha "$GITHUB_SHA" --output target/xd1c/collection-report.json \
+            --observations target/xd1c/observations.json || status=$?
+          for file in target/xd1c/collection-report.json target/xd1c/observations.json; do
+            if [ -f "$file" ]; then
+              sha256sum "$file"
+              cat "$file"
+            fi
+          done
+          exit "$status"
+
+      - name: Upload the report
+        if: always()
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: xd1c-report-attempt-${{ github.run_attempt }}
+          path: |
+            target/xd1c/collection-report.json
+            target/xd1c/observations.json
+          retention-days: 90
+          if-no-files-found: warn
