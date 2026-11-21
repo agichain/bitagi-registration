@@ -1,0 +1,68 @@
+{
+  "evaluation_policy_sha256": "574bb7c0f6a0b8ec500b46ffcac87e5369c805fe4f013c0b990cef8ecb898216",
+  "p5002": {
+    "constants": {
+      "anchor_slack_seconds": 300,
+      "bitcoind_sha256": {
+        "a": "986e63b3c8770f08d0059820ad3dd085d1ab9e1bea23946c243f858a06888a08",
+        "b": "30d4fa871a5447be1f57f195c3fd021c6fa44f920693aa4650e61769326edca8"
+      },
+      "block_seconds": 600,
+      "checkpoint_seconds": 3600,
+      "checkpoints": 26,
+      "clock_step_gap_seconds": 60,
+      "clock_step_record_seconds": 2,
+      "gap_seconds": 180,
+      "h0": 200,
+      "live_window_seconds": 1800,
+      "max_attempts": 3,
+      "node_versions": {
+        "a": 310100,
+        "b": 300300
+      },
+      "required_seconds": 86400,
+      "sample_seconds": 60,
+      "signet_challenge_hex": "51",
+      "stop_margin_seconds": 600
+    },
+    "fixed_lines": {
+      "s14_not_covered": "S14 heights not covered: every block containing a project REGISTER candidate; accepted REGISTER height; every block containing a project BEAT candidate; accepted BEAT height. Not counted from Regtest CI; open in P5-004 until a later Signet launch run under its own registration.",
+      "scope_b": "P5-002 scope (b): two private Signet nodes, the replay and the watcher only; no launch host, no REGISTER or BEAT, no Signet H0-1 Rust/Python comparison."
+    },
+    "pinned_commit": "eb121c13bb0974d5d4e885b921ee4c0e0766251c",
+    "tool_sha256": {
+      ".github/workflows/claude-track-p5002.yml": "3a5cd5e0f552444da8a4b530eb28e9d98c2b538e5f11bccb3b358e35b612a297",
+      "Cargo.lock": "96480a90b7a31bfa6a8c23e4886beb56dcbc4d72958a279f4d8d80d28b174889",
+      "crates/bitagi-cli/examples/test_only_signet_store_fixture.rs": "896253e3b602114dac6983e89b6b1158ddae65f53d36b5f705d1ed0b31fada9d",
+      "crates/bitagi-cli/src/monitor_alarms.rs": "f2c8ee6c220db6c1552e598ff943548dbf52e292961136b4fc469f89ea5fb025",
+      "crates/bitagi-cli/src/monitor_tick.rs": "f569052967063b67742a8a480e09b10481ff29bd9d3026ef5cf7cbfd52d90bec",
+      "docs/claude-track/formats/MONITOR_LOG_V1.md": "814d3728b57fa904ea6080e1942060355ee20497e2379a88622185cebb9b0353",
+      "docs/claude-track/formats/P5002_ENDURANCE_V1.md": "28b3c779a17ff08d4ea1447b1613be547a79683d95251e354f188102c55a6749",
+      "docs/policy/ACTIVE_VALIDATION_POLICY.json": "e3068586e6b875604dab31d14731dc313d1b440fe7785fbc37fb044acdee7a07",
+      "rust-toolchain.toml": "3ebdb2005cc3a5b3558c25aba129043fe701ecce1f2360b8b6672a97b55e810e",
+      "tools/claude_track_exit.py": "40caf7868028b91d32265066caacdffda7ec2c5da53ba0810f9f9b200996d632",
+      "tools/claude_track_monitor.py": "698000b2178fb2982ab595d9218a477aad971943013e4d939c513c216c92b816",
+      "tools/claude_track_p5002_check.py": "4455612ca683eaf4424601332ef8b45baec36706ffc127d94c41dceb896255cb",
+      "tools/claude_track_p5002_confirm.py": "3bbe49de87a672127aac5401cb53dbcf21c7242ce72200f6eed7da87cecafea0",
+      "tools/claude_track_p5002_driver.py": "5083e1b6398d57ef9e5ea8cf48b8c7e748be755fe7fba092a004cc0d3bc351ba"
+    }
+  },
+  "pinned_files": {
+    ".github/workflows/claude-track-p5002.yml": "3a5cd5e0f552444da8a4b530eb28e9d98c2b538e5f11bccb3b358e35b612a297",
+    "docs/claude-track/formats/P5002_ENDURANCE_V1.md": "28b3c779a17ff08d4ea1447b1613be547a79683d95251e354f188102c55a6749",
+    "docs/claude-track/plans/CT-P3-045b_PREREGISTRATION_DRAFT_EN.md": "05139fde95b5a4cf51be733cfc438cb8aea27e52b175c00d85ce67f42c82674f",
+    "tools/claude_track_exit.py": "40caf7868028b91d32265066caacdffda7ec2c5da53ba0810f9f9b200996d632",
+    "tools/claude_track_monitor.py": "698000b2178fb2982ab595d9218a477aad971943013e4d939c513c216c92b816",
+    "tools/claude_track_p5002_check.py": "4455612ca683eaf4424601332ef8b45baec36706ffc127d94c41dceb896255cb",
+    "tools/claude_track_p5002_confirm.py": "3bbe49de87a672127aac5401cb53dbcf21c7242ce72200f6eed7da87cecafea0",
+    "tools/claude_track_p5002_driver.py": "5083e1b6398d57ef9e5ea8cf48b8c7e748be755fe7fba092a004cc0d3bc351ba"
+  },
+  "prior_registration_sha256": "55af241e1690fde2269fe157dbfe145602e2fcbe5fc95eb0e9a99e9b53d128ed",
+  "registration_key_ed25519_fingerprint": "SHA256:vSVjqy/2wHEi62/mOi56GwZMahrbIv2gTYe1xEDrZRM",
+  "release_class": "CLASS_T",
+  "schema": "BITAGI_CT_P5_005_REGISTRATION_V1_FOLLOW_UP_2",
+  "schemas": {
+    "p5002_observation_list": "BITAGI_CT_OBSERVATION_LIST_V1",
+    "p5002_report": "BITAGI_CT_P5002_REPORT_V1"
+  }
+}
