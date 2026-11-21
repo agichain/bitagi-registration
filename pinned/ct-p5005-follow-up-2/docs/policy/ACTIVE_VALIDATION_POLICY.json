@@ -1,0 +1,58 @@
+{
+  "schema_version": "GOV072_VALIDATION_POLICY_V1",
+  "policy_id": "GOV072_VALIDATION_BUDGET",
+  "task_id": "P4-040",
+  "local_authority": "EXPLICIT_USER_INTENT",
+  "local_criteria": "AUTHORIZED_FOR_IMPLEMENTATION_AND_CONSISTENCY_CHECKS",
+  "shared_activation": "PREPARED_LOCAL_ONLY",
+  "campaign_execution_authorized": false,
+  "task_base": "0128c2214690ad894c581269b252a442ad246ab2",
+  "qualified_main_ancestor": "9bae8008876b639943464d1417752a0c7db75edb",
+  "spec": {
+    "path": "specs/BITAGI_SEM1_TDS_D3_5_GOV_072_VALIDATION_BUDGET_ADDENDUM_2026-09-18_EN.md",
+    "sha256": "bc9f8489c2a4959299c00f549eff0a8a07e982ef94e6f70437f5db088c272698",
+    "bytes": 7703
+  },
+  "adoption_decision": {
+    "path": "evidence/governance/P4_040_INTENT.json",
+    "sha256": "f2a819cac8e5a76423f69a94e7b7e2fce50293785b30a885db50bc3bc4da4b80",
+    "bytes": 2367
+  },
+  "requirements": {
+    "path": "docs/tasks/P4-040_D_EXECUTION_REQUIREMENTS.json",
+    "sha256": "51ff4fc6729d6eb38aec0ce859c3e1054d430fd7882ee68502e2d21a2d29ee81",
+    "bytes": 13716
+  },
+  "predecessor_requirements": {
+    "path": "docs/tasks/P4-021_D_EXECUTION_REQUIREMENTS.json",
+    "sha256": "a53bd83655ac240b4bf0572baa0454b05a33a7ab5d97a1f0711bea4178b7c1bf",
+    "bytes": 13549
+  },
+  "reorg_histories": 1000,
+  "crash_points": 1000,
+  "signet": {
+    "continuous_seconds": 86400,
+    "reset_restarts": true,
+    "unexplained_gap_restarts": true,
+    "actual_live_observation_required": true,
+    "other_exit_conditions_unchanged": true
+  },
+  "preserved": {
+    "forward_transitions": 100000,
+    "known_answer_histories": 128,
+    "known_answer_crash_points": 128,
+    "max_reorg_depth": 288,
+    "class_p_days": 180,
+    "class_p_height_span": 26208,
+    "mainnet_human_deliberation_seconds": 43200,
+    "original_source_and_receipts": true,
+    "core_product_model_unchanged": true
+  },
+  "claims": {
+    "campaign_result": "NOT_RUN",
+    "signet_result": "NOT_RUN",
+    "readiness": "NOT_ESTABLISHED",
+    "release_authorization": "NONE",
+    "historical_results_relabelled": false
+  }
+}

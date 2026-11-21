@@ -1,0 +1,333 @@
+name: claude-track-ardr-judge
+
+# CT-P5-001 J2 and J3 (A #258 issuecomment-6557890079 decision 2 and the J3 row; docs/claude-track/formats/
+# ARDR_JUDGE_V1.md sections 18-20): A's judge workflow, apart from the campaign workflow. A dispatches it from main
+# only, after the window, naming the experiment (ITEM1 or POOL; J4b: or ITEM2 or an item-4 sub-scenario) and its
+# claude-track-ardr dispatch runs to judge. It builds A's replay worker once (as the ARDR slice job builds the bidder
+# worker), checks it on the judge's own fixture, reads each listed run and its declaration, collection and slice
+# artifacts with GET requests only, binds every raw log to the collection (collection, slice record, raw log
+# SHA-256s), runs tools/claude_track_ardr_judge.py per unit with a raw log (item1 or pool; J4b: item2 or item4), then
+# the experiment's judgement over every listed run (J3: the 10% rule over the registered N, and the pool's Herfindahl
+# index), and prints each record and its sha256sum line in the job log: A's session reads job logs, not artifacts.
+# The records are uploaded too.
+#
+# J4b (ARDR_JUDGE_V1 section 27): the experiment may also be ITEM2 or an item-4 sub-scenario, each unit judged by item2
+# or item4 as POOL's by pool. A listed run that declared nothing (no declaration, collection or slice artifact) is
+# read with its attempt-1 jobs listing and counts as listed only when that shows its plan failed and no other job ran a
+# step (section 16 P3-2); CONFIRMATORY asks the dispatch listing only for runs created from two days before the
+# registration's bound (section 16 P3-8).
+#
+# Permissions: contents read and actions read (the GET requests of one step); no write scope, no secret but the
+# job's own token, no push, comment, label or attestation step. Not a required check. Class T Regtest development
+# evidence only.
+run-name: ${{ format('ardr judge {0} {1} {2}', inputs.mode, inputs.experiment, inputs.run_ids) }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_ids:
+        description: Comma-separated run ids of claude-track-ardr dispatch runs of the experiment on main (at most 20)
+        required: true
+        type: string
+      experiment:
+        description: The experiment those runs dispatched; one experiment judgement covers them all (J3, J4b)
+        required: true
+        type: choice
+        options: [ITEM1, POOL, ITEM2, ITEM4_SELF_DEALING, ITEM4_FEE_ASYMMETRY, ITEM4_CENSORSHIP, ITEM4_REORG]
+      mode:
+        description: The mode those runs were dispatched in, and the judge's mode
+        required: true
+        type: choice
+        options: [EXPLORATORY, CONFIRMATORY]
+      registration:
+        description: Registration file path in this commit (CONFIRMATORY only)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+# CR-22: a dispatch never cancels another.
+concurrency:
+  group: claude-track-ardr-judge-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  judge:
+    name: ARDR judge (main only; each record and its SHA-256 in the log)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    # As the ARDR slice job: every judge call reuses the one worker build's non-incremental artifacts.
+    env:
+      CARGO_INCREMENTAL: '0'
+    steps:
+      # J3 re-check P3-3: as the campaign's plan job, no re-run attempt (a judgement is made once per dispatch).
+      - name: Refuse any ref but main and any attempt but the first
+        run: test "$GITHUB_REF" = refs/heads/main && test "$GITHUB_RUN_ATTEMPT" = 1
+
+      # Full history: each judged run's policy and method policy are read at that run's own commit.
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Verify the exact dispatched head
+        env:
+          EXPECTED_HEAD_SHA: ${{ github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD_SHA"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13.5'
+
+      # Before the token step: a mode or experiment that is not a choice, run ids that are not a comma list of
+      # digits, or a registration that is not a file of this commit (CONFIRMATORY) or is given in EXPLORATORY, are
+      # refused here and nothing is read. Every tool line (a refusal included) goes to the log through stderr. The
+      # first-parent history of this commit is saved: each judged run's head must be on it (RUN_NOT_ON_MAIN_HISTORY;
+      # it binds the run to main only while main takes changes by merge commit, as the campaign's S04 and
+      # recollection rules). J3 (CONFIRMATORY): the dispatch listing's bound is the earliest committer time among the
+      # commits of this history that changed the presence of the registration's exact bytes (`--find-object`, the
+      # minimum by `%ct`, not the last line of git's date order: a later revert, re-add, rename or a merged side branch
+      # with skewed dates can only lower it, which is stricter; J3 delta re-check P3-1). A committer date is not
+      # authenticated: the registration's own receipt is the time anchor (ARDR_JUDGE_V1 section 20). J4b: each
+      # experiment's per-unit judge command (item1, pool, item2, item4); the dispatch listing's query from the judge
+      # (`run-query`: CONFIRMATORY only the runs created from two days before the bound, section 16 P3-8).
+      - name: Check the inputs
+        env:
+          ARDR_RUN_IDS: ${{ inputs.run_ids }}
+          ARDR_MODE: ${{ inputs.mode }}
+          ARDR_EXPERIMENT: ${{ inputs.experiment }}
+          ARDR_REGISTRATION: ${{ inputs.registration }}
+        run: |
+          set -euo pipefail
+          case "$ARDR_MODE" in
+            EXPLORATORY|CONFIRMATORY) ;;
+            *) echo "MODE_NOT_A_CHOICE" >&2; exit 2 ;;
+          esac
+          case "$ARDR_EXPERIMENT" in
+            ITEM1) unit_command=item1 ;;
+            POOL) unit_command=pool ;;
+            ITEM2) unit_command=item2 ;;
+            ITEM4_SELF_DEALING|ITEM4_FEE_ASYMMETRY|ITEM4_CENSORSHIP|ITEM4_REORG) unit_command=item4 ;;
+            *) echo "EXPERIMENT_NOT_A_CHOICE" >&2; exit 2 ;;
+          esac
+          runs=$(python3 tools/claude_track_ardr_judge.py run-ids --run-ids "$ARDR_RUN_IDS" | tee -a /dev/stderr \
+            | python3 -c 'import json,sys; print(" ".join(json.load(sys.stdin)["runs"]))')
+          after=""
+          if [ "$ARDR_MODE" = CONFIRMATORY ]; then
+            test "$(git cat-file -t "HEAD:$ARDR_REGISTRATION")" = blob
+            blob=$(git rev-parse "HEAD:$ARDR_REGISTRATION")
+            after=$(git log --format='%ct %cI' --find-object="$blob" "$GITHUB_SHA" | sort -n | awk 'NR == 1 {print $2}')
+            test -n "$after"
+          else
+            test -z "$ARDR_REGISTRATION"
+          fi
+          bound=()
+          if [ -n "$after" ]; then bound=(--listed-after "$after"); fi
+          query=$(python3 tools/claude_track_ardr_judge.py run-query --mode "$ARDR_MODE" "${bound[@]}" \
+            | tee -a /dev/stderr | python3 -c 'import json,sys; print(json.load(sys.stdin)["query"])')
+          mkdir -p target/judge
+          git rev-list --first-parent "$GITHUB_SHA" > target/judge/main-history.txt
+          echo "ARDR_LISTED_AFTER=$after" >> "$GITHUB_ENV"
+          echo "ARDR_RUNS=$runs" >> "$GITHUB_ENV"
+          echo "ARDR_MODE=$ARDR_MODE" >> "$GITHUB_ENV"
+          echo "ARDR_EXPERIMENT=$ARDR_EXPERIMENT" >> "$GITHUB_ENV"
+          echo "ARDR_UNIT_COMMAND=$unit_command" >> "$GITHUB_ENV"
+          echo "ARDR_RUNS_QUERY=$query" >> "$GITHUB_ENV"
+
+      - name: Install pinned Rust toolchain
+        timeout-minutes: 5
+        run: rustup show active-toolchain || rustup toolchain install
+
+      # A's replay worker (ARDR_JUDGE_V1 section 17), built once; every judge call below runs this binary.
+      - name: Build the judge's replay worker
+        timeout-minutes: 20
+        run: |
+          set -euo pipefail
+          mkdir -p target/judge
+          cargo test --locked --no-run -p bitagi-signer --test ardr_judge_replay --message-format=json \
+            > target/judge/build.jsonl
+          bin=$(python3 - <<'EOF'
+          import json
+          found = []
+          for line in open('target/judge/build.jsonl', encoding='utf-8'):
+              m = json.loads(line)
+              if (m.get('reason') == 'compiler-artifact' and m['target']['name'] == 'ardr_judge_replay'
+                      and m['profile']['test'] and m.get('executable')):
+                  found.append(m['executable'])
+          if len(found) != 1:
+              raise SystemExit(2)
+          print(found[0])
+          EOF
+          )
+          echo "ARDR_JUDGE_REPLAY_BIN=$bin" >> "$GITHUB_ENV"
+
+      # The worker on the judge's own Core-shaped run: it must bear exactly the REGISTERs planted there.
+      - name: Check the replay worker on the judge's fixture, none skipped
+        timeout-minutes: 10
+        run: |
+          set -euo pipefail
+          BITAGI_ARDR_JUDGE_REPLAY_BIN="$ARDR_JUDGE_REPLAY_BIN" python3 -m unittest -v \
+            tests.claude_track.test_ardr_judge.RealReplay 2>&1 | tee target/judge/real-replay.log
+          if grep -q skipped target/judge/real-replay.log; then exit 1; fi
+
+      # The only step with the token: GET requests for each listed run, its artifact listing (one page of 100) and
+      # its declaration, collection and slice zips, each into the run's own new directory. The tool checks each
+      # answer before the next request; its line (ids, digests, a refusal) goes to the log through stderr. `gh api`
+      # follows a zip's redirect and writes the bytes to the file; no API answer and no URL is printed. J3: then every
+      # page of this workflow's own listing of claude-track-ardr.yml workflow_dispatch runs on main (at most 10
+      # pages of 100; `run-pages` refuses a listing GitHub caps at 1,000), saved for the experiment's run-list check.
+      # J4b: a run with nothing to download declared nothing; its attempt-1 jobs listing is saved, and `unpack` and the
+      # experiment accept it only when that shows its plan failed and no other job ran a step (section 16 P3-2). The
+      # listing's query is the judge's (`run-query`, checked before this step).
+      - name: Read the listed runs and their artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tool=tools/claude_track_ardr_judge.py
+          for id in $ARDR_RUNS; do
+            dir="target/judge/runs/$id"
+            mkdir -p "$dir"
+            test -z "$(ls -A "$dir")"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id" > "$dir/run.json"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id/artifacts?per_page=100" > "$dir/artifacts.json"
+            pairs=$(python3 "$tool" artifacts --dir "$dir" --run-id "$id" --mode "$ARDR_MODE" \
+              --experiment "$ARDR_EXPERIMENT" --main-history target/judge/main-history.txt | tee -a /dev/stderr \
+              | python3 -c 'import json,sys; print(" ".join(json.load(sys.stdin)["downloads"]))')
+            for pair in $pairs; do
+              gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/${pair#*:}/zip" > "$dir/${pair%%:*}.zip"
+            done
+            if [ -z "$pairs" ]; then
+              gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id/attempts/1/jobs?per_page=100" > "$dir/jobs.json"
+            fi
+          done
+          listing=target/judge/runs-listing
+          mkdir -p "$listing"
+          test -z "$(ls -A "$listing")"
+          query="$ARDR_RUNS_QUERY"
+          gh api "repos/$GITHUB_REPOSITORY/actions/workflows/claude-track-ardr.yml/runs?$query&page=1" \
+            > "$listing/runs-1.json"
+          pages=$(python3 "$tool" run-pages --dir "$listing" | tee -a /dev/stderr \
+            | python3 -c 'import json,sys; print(json.load(sys.stdin)["pages"])')
+          for page in $(seq 2 "$pages"); do
+            gh api "repos/$GITHUB_REPOSITORY/actions/workflows/claude-track-ardr.yml/runs?$query&page=$page" \
+              > "$listing/runs-$page.json"
+          done
+
+      # Per run: unpack and bind the zips (each zip's SHA-256 against the listing's digest, each slice record
+      # against the collection's slice_record_sha256, each raw log against the slice record's raw_log_sha256), read
+      # the policy at the run's own commit and, for ITEM1, the method policy and the D2-2 file there too (an
+      # EXPLORATORY run without a declared method policy takes the DRAFT method file of that commit, as its driver
+      # took the DRAFT values; every CLUSTER_TOOL tool_sha256 must be that D2-2 file's), judge each unit with a raw
+      # log (item1, or pool for POOL), and print each record and its sha256sum line (a 200-gate record is about
+      # 96 KB on one line; the uploaded artifact holds the same bytes). Every unit is judged; the step fails at the
+      # end if any judge call refused or a record names another unit. J3: then the experiment's judgement over every
+      # listed run's collection and every unit record (the run list checked against the saved dispatch listing; the
+      # 10% rule over the registered N, a unit no listed run started counting as missing; the pool's Herfindahl
+      # index), printed the same way; its policy is the first listed run's, and each unit record must name the same
+      # policy. A listed run with no unit to judge is then a notice (NO_JUDGED_UNITS), since the experiment's
+      # judgement counts its units; without an experiment it still fails the step (J2). J4b: ITEM2 and item-4 units are
+      # judged by item2 and item4 with pool's arguments; a listed run that declared nothing (unpack accepted it on its
+      # attempt-1 jobs listing) has no policy or unit and goes to the experiment as --undeclared-run, which re-checks
+      # it; the experiment's policy is the first declared run's (NO_DECLARED_RUN fails the step when none declared).
+      - name: Judge each unit and print the records
+        timeout-minutes: 150
+        env:
+          ARDR_REGISTRATION: ${{ inputs.registration }}
+        run: |
+          set -euo pipefail
+          tool=tools/claude_track_ardr_judge.py
+          mkdir -p target/judge/records
+          reg=()
+          if [ "$ARDR_MODE" = CONFIRMATORY ]; then reg=(--registration "$ARDR_REGISTRATION"); fi
+          after=()
+          if [ -n "$ARDR_LISTED_AFTER" ]; then after=(--listed-after "$ARDR_LISTED_AFTER"); fi
+          tally=()
+          policy=""
+          status=0
+          for id in $ARDR_RUNS; do
+            out="target/judge/out/$id"
+            plan=$(python3 "$tool" unpack --dir "target/judge/runs/$id" --run-id "$id" --mode "$ARDR_MODE" \
+              --experiment "$ARDR_EXPERIMENT" --main-history target/judge/main-history.txt --out "$out" \
+              | tee -a /dev/stderr)
+            field() { printf '%s' "$plan" | python3 -c 'import json,sys; v=json.load(sys.stdin)[sys.argv[1]]; print(" ".join(map(str, v)) if isinstance(v, list) else "" if v is None else v)' "$1"; }
+            if [ "$(field declared)" = False ]; then
+              echo "run $id: declared nothing; its attempt-1 jobs listing shows no job but the failed plan ran"
+              tally+=(--undeclared-run "target/judge/runs/$id")
+              continue
+            fi
+            commit=$(field commit)
+            git show "$commit:$(field policy_path)" > "$out/policy.json"
+            if [ -z "$policy" ]; then policy="$out/policy.json"; fi
+            tally+=(--collection "$out/collection.json")
+            if [ "$ARDR_EXPERIMENT" = ITEM1 ]; then
+              git show "$commit:tools/claude_track_ardr_cluster.py" > "$out/d2_2_at_run_commit.py"
+              method=$(field method_policy_path)
+              if [ -n "$method" ]; then
+                git show "$commit:$method" > "$out/method.json"
+              else
+                git show "$commit:tests/claude_track/ardr_exploratory_item1_method_policy_draft.json" > "$out/method.json"
+              fi
+            fi
+            units=$(field units)
+            echo "run $id: $(printf '%s' "$units" | wc -w) units with a raw log"
+            if [ -z "$units" ] && [ -n "$ARDR_EXPERIMENT" ]; then
+              echo "NO_JUDGED_UNITS run $id (notice: the experiment's judgement counts its units)" >&2
+            elif [ -z "$units" ]; then   # J2's rule; not reached while the experiment input is required
+              echo "NO_JUDGED_UNITS run $id" >&2
+              status=1
+            fi
+            for unit in $units; do
+              record="target/judge/records/judgement-$id-$unit.json"
+              code=0
+              if [ "$ARDR_EXPERIMENT" = ITEM1 ]; then
+                python3 "$tool" item1 --policy "$out/policy.json" --method-policy "$out/method.json" \
+                  --raw "$out/raw-$unit.jsonl" --collection "$out/collection.json" --mode "$ARDR_MODE" "${reg[@]}" \
+                  --d2-2-tool-at-commit "$out/d2_2_at_run_commit.py" --replay-bin "$ARDR_JUDGE_REPLAY_BIN" \
+                  > "$record" || code=$?
+              else
+                python3 "$tool" "$ARDR_UNIT_COMMAND" --policy "$out/policy.json" --raw "$out/raw-$unit.jsonl" \
+                  --collection "$out/collection.json" --mode "$ARDR_MODE" "${reg[@]}" \
+                  --replay-bin "$ARDR_JUDGE_REPLAY_BIN" > "$record" || code=$?
+              fi
+              cat "$record"
+              sha256sum "$record"
+              if [ "$code" != 0 ]; then
+                status=1
+              elif ! python3 -c 'import json,sys; sys.exit(json.load(open(sys.argv[1]))["unit"]["run"] != int(sys.argv[2]))' \
+                  "$record" "$unit"; then
+                echo "RECORD_UNIT_MISMATCH run $id unit $unit" >&2
+                status=1
+              else
+                tally+=(--record "$record")
+              fi
+            done
+          done
+          if [ -z "$policy" ]; then
+            echo "NO_DECLARED_RUN (the experiment's policy is a declared run's)" >&2
+            exit 1
+          fi
+          record="target/judge/records/experiment-$ARDR_EXPERIMENT.json"
+          code=0
+          python3 "$tool" experiment --experiment "$ARDR_EXPERIMENT" --policy "$policy" --mode "$ARDR_MODE" \
+            "${reg[@]}" --runs-listing target/judge/runs-listing --main-history target/judge/main-history.txt \
+            "${after[@]}" "${tally[@]}" > "$record" || code=$?
+          cat "$record"
+          sha256sum "$record"
+          if [ "$code" != 0 ]; then status=1; fi
+          exit "$status"
+
+      - name: Upload the judgement records
+        if: always()
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ardr-judgements
+          path: target/judge/records/
+          retention-days: 90
+          if-no-files-found: warn

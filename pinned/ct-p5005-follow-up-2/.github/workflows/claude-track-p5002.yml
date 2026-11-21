@@ -1,0 +1,1132 @@
+name: claude-track-p5002
+
+# P5-002 endurance harness (XA13, PR-1, PR-2a and PR-2b; A's decisions Q1-Q16 of 2026-11-15 and PR-2's fifteen
+# of 2026-11-16; the interface is
+# docs/claude-track/formats/P5002_ENDURANCE_V1.md). One dispatch is one attempt: two Bitcoin Core nodes (31.1 and
+# 30.3) on one private Signet on the VPS runner, observed until one qualifying interval reaches the required seconds
+# (S13, GOV072) with the critical heights read on both nodes (S14, TDS 6.8), scope (b). Two modes, one input:
+# CONFIRMATORY (a registered attempt, from a pinned attempt tag ct-p5002-a<N> at the registration's pinned commit)
+# and EXPLORATORY (a pilot from main, or the TEST_ONLY pilot from an attempt tag, which reads the TEST_ONLY pilot
+# registration and the cited S04 run as a registered attempt would; it may scale the constants; its results are
+# labelled EXPLORATORY and never count). Since PR-2b the replay (B's TEST_ONLY Signet store fixture, its --follow
+# every sample period) and the monitor (tools/claude_track_monitor.py over `bitagi monitor tick`) run with every
+# attempt; the hosted build job builds their two binaries once and the VPS checks each before use (no Rust on the
+# VPS).
+#
+# Jobs, each with its own minimal permissions (the workflow grants none):
+# - exclusive (hosted, actions read): no run of the 7a, VPS checks, XD-1 confirmatory or this workflow waits or
+#   runs. Those workflows are not edited: A dispatches none of them while a P5-002 attempt runs.
+# - build (hosted, contents read): cargo build --locked of `bitagi` and the fixture example at the dispatched
+#   commit, packed into one tar (fixed order, owner and time) uploaded as p5002-bin (3 days); its SHA-256 and each
+#   binary's are the job's outputs, which the plan job writes into the declaration.
+# - plan (hosted, contents and actions read): the inputs' shapes; the tree archived for the VPS job;
+#   for a dispatch from an attempt tag, the cited S04 run read with GET requests (the run, its record artifact or,
+#   when that is not listed or has expired, its record job's log); tools/claude_track_p5002_check.py plan (event,
+#   attempt 1 of the run, ref, expected head, the mode's inputs; from an attempt tag also the registration read
+#   from main and hashed against the input, its pinned commit on main's first-parent chain, the tool hashes it
+#   registers and the S04 citation) writes the declaration; then
+#   tools/claude_track_p5002_confirm.py continuity over this workflow's dispatch listing (this attempt is the one
+#   after the counted attempts; an earlier dispatch's artifact and jobs listings, and its records when it has no
+#   marker, say whether it started; a registered listing has no run number missing).
+# - observe (the VPS runner label, no token): the tree from the plan job's artifact (its SHA-256 checked), the
+#   binaries from the build job's artifact (the tar's SHA-256 checked; the driver checks each file's), Core, the
+#   driver's start (nodes, pre-mine, the replay store, the monitor loop, the sampler, producer and replayer daemon,
+#   sample 0), the marker uploaded as
+#   p5002-started, then 26 pairs of a driver checkpoint and its upload (one each 3,600 s with the registered
+#   constants; a pair beyond the declared checkpoints writes and uploads nothing), the driver's finish and the
+#   records upload, both always. A failed checkpoint upload fails the job: an upload that stops working after hours
+#   is seen at the hour it stops (A's Q9), not at the end. One VPS job per dispatch.
+# - report (hosted, contents and actions read): the dispatch listing and every counted attempt's artifacts and
+#   observe job start, then tools/claude_track_p5002_confirm.py report: the collection report with the verdict and,
+#   CONFIRMATORY, the observation list, printed in the log and uploaded. This hosted job is where the final
+#   verification runs (CR-21 condition 4; the report's hosted_limits list says what it can and cannot see).
+#
+# The observe job's 1,760 minutes (the format document's step budgets; A's decision 2, PR-2's decision 14): the
+# start step's cap (70; the pre-mine of 199 blocks, the replay build and the monitor's start are inside it), the 26
+# checkpoint slots (93,600 s = 1,560 minutes from sample 0: the 86,400 s, the stop margin, and the rest up to the
+# daemon's deadline), the finish step's cap (25), the caps of the downloads, Python and Core (35), the records
+# upload's cap (10) and 60 minutes for the 27 small uploads and whatever else runs late. Nothing relies on an always() step running after a job-level timeout. With the
+# registered constants a clean observation stops at about 87,000 s (1,450 minutes), so the job then ends near
+# 1,500 minutes.
+#
+# Class T, private Signet, no key of any kind (challenge 51, no wallet); release_authorization NONE. Not a required
+# check. Never dispatched by a pull request.
+
+# An EXPLORATORY dispatch is named with registration none, the pilot from an attempt tag included: its declaration
+# names no registration, and the listing reads the run name as the dispatch's registration.
+run-name: ${{ format('p5002 {0} attempt {1} registration {2}', inputs.mode, inputs.attempt, inputs.mode == 'CONFIRMATORY' && inputs.registration_sha256 || 'none') }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: CONFIRMATORY (a registered attempt, from a ct-p5002-aN tag) or EXPLORATORY (a pilot, from main or a tag)
+        required: true
+        type: choice
+        options: [CONFIRMATORY, EXPLORATORY]
+      attempt:
+        description: The attempt number (CONFIRMATORY, the one after the counted attempts; EXPLORATORY, 1)
+        required: true
+        type: number
+      expected_head:
+        description: The exact commit this dispatch runs (CONFIRMATORY, the registration's pinned commit)
+        required: true
+        type: string
+      registration:
+        description: CONFIRMATORY only (or the TEST_ONLY pilot from a tag), the registration file's path on main
+        required: false
+        type: string
+      registration_sha256:
+        description: CONFIRMATORY only (or the TEST_ONLY pilot from a tag), the SHA-256 of the registration's bytes
+        required: false
+        type: string
+      s04_run_id:
+        description: CONFIRMATORY only (or the TEST_ONLY pilot from a tag), the main-push run whose S04 record is cited
+        required: false
+        type: string
+      duration_seconds:
+        description: EXPLORATORY only, replaces the required seconds (60 to 96000)
+        required: false
+        type: string
+      sample_seconds:
+        description: EXPLORATORY only, the sample period (2 to 60)
+        required: false
+        type: string
+      block_seconds:
+        description: EXPLORATORY only, the block period (10 to 600)
+        required: false
+        type: string
+      checkpoint_seconds:
+        description: EXPLORATORY only, the checkpoint period (30 to 3700)
+        required: false
+        type: string
+
+permissions: {}
+
+# CR-22: a dispatch never cancels another. One VPS run at a time is the exclusive job's.
+concurrency:
+  group: claude-track-p5002-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  exclusive:
+    name: P5-002 exclusive (hosted)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+    steps:
+      - name: Refuse while another VPS run waits or runs
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for wf in claude-track-7a.yml claude-track-vps-checks.yml claude-track-xd1-confirmatory.yml claude-track-p5002.yml; do
+            for status in queued in_progress waiting requested pending; do
+              ids="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/$wf/runs?event=workflow_dispatch&status=$status&per_page=100" \
+                | jq -r '.workflow_runs | if type == "array" then .[].id else error("runs") end')" \
+                || { echo "p5002: RUNS_READ $wf $status" >&2; exit 3; }
+              others="$(printf '%s\n' "$ids" | grep -cvx -e "$GITHUB_RUN_ID" -e '' || true)"
+              [ "$others" = 0 ] || { echo "p5002: OTHER_RUN $wf $status" >&2; exit 2; }
+            done
+          done
+          echo "p5002: no other VPS run"
+
+  # The two binaries the VPS runs (A's decision 2): built once here at the dispatched commit, as the 7a workflow's
+  # hosted build job builds its examples (env -i with a kept list, the dev profile without debug information, the
+  # toolchain's home and the checkout remapped). The tar's SHA-256 and each binary's go to the plan job (never an
+  # input).
+  build:
+    name: P5-002 build (hosted)
+    needs: exclusive
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      bin_sha256: ${{ steps.pack.outputs.bin_sha256 }}
+      bitagi_sha256: ${{ steps.pack.outputs.bitagi_sha256 }}
+      fixture_sha256: ${{ steps.pack.outputs.fixture_sha256 }}
+    steps:
+      - name: Refuse a re-run
+        run: test "$GITHUB_RUN_ATTEMPT" = 1
+
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Verify the exact dispatched head
+        env:
+          EXPECTED_HEAD_SHA: ${{ github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD_SHA"
+
+      - name: Install the pinned Rust toolchain
+        run: |
+          rustup show active-toolchain || rustup toolchain install
+
+      - name: Build bitagi and the Signet store fixture
+        shell: bash
+        run: |
+          home="${CARGO_HOME:-$HOME/.cargo}"
+          case "$home" in /*) ;; *) home="$PWD/$home" ;; esac
+          keep=()
+          for k in PATH HOME CARGO_HOME RUSTUP_HOME LANG LC_ALL TMPDIR; do
+            if [ -n "${!k+set}" ]; then keep+=("$k=${!k}"); fi
+          done
+          flags="--remap-path-prefix=$home=/cargo"$'\x1f'"--remap-path-prefix=$PWD=/src"
+          env -i "${keep[@]}" CARGO_PROFILE_DEV_DEBUG=0 CARGO_TARGET_DIR="$PWD/target" \
+            CARGO_ENCODED_RUSTFLAGS="$flags" \
+            cargo build --locked -p bitagi-cli --bin bitagi --example test_only_signet_store_fixture
+
+      # One tar with a fixed member order, owner and time (an artifact does not keep the executable bit).
+      - name: Pack the two binaries
+        id: pack
+        run: |
+          set -euo pipefail
+          mkdir -p target/p5002-bin
+          cp target/debug/bitagi target/p5002-bin/bitagi
+          cp target/debug/examples/test_only_signet_store_fixture target/p5002-bin/test_only_signet_store_fixture
+          chmod 0755 target/p5002-bin/bitagi target/p5002-bin/test_only_signet_store_fixture
+          tar --sort=name --owner=0 --group=0 --numeric-owner --mtime=@0 -cf target/p5002-bin.tar \
+            -C target/p5002-bin bitagi test_only_signet_store_fixture
+          bin="$(sha256sum target/p5002-bin.tar | cut -d ' ' -f 1)"
+          bitagi="$(sha256sum target/p5002-bin/bitagi | cut -d ' ' -f 1)"
+          fixture="$(sha256sum target/p5002-bin/test_only_signet_store_fixture | cut -d ' ' -f 1)"
+          {
+            echo "bin_sha256=$bin"
+            echo "bitagi_sha256=$bitagi"
+            echo "fixture_sha256=$fixture"
+          } >> "$GITHUB_OUTPUT"
+          echo "p5002: binaries $bin bitagi $bitagi fixture $fixture"
+
+      - name: Upload the binaries
+        timeout-minutes: 10
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-bin
+          path: target/p5002-bin.tar
+          retention-days: 3
+          if-no-files-found: error
+
+  plan:
+    name: P5-002 plan (hosted)
+    needs: [exclusive, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      source_sha256: ${{ steps.source.outputs.sha256 }}
+      bin_sha256: ${{ needs.build.outputs.bin_sha256 }}
+    steps:
+      - name: Refuse a re-run
+        run: test "$GITHUB_RUN_ATTEMPT" = 1
+
+      # Every input reaches a script through env only; its shape is checked here, before any step uses it, and the
+      # tools check each value again.
+      - name: Check the inputs
+        shell: bash
+        env:
+          P5002_MODE: ${{ inputs.mode }}
+          P5002_ATTEMPT: ${{ inputs.attempt }}
+          P5002_EXPECTED_HEAD: ${{ inputs.expected_head }}
+          P5002_REGISTRATION: ${{ inputs.registration }}
+          P5002_REGISTRATION_SHA256: ${{ inputs.registration_sha256 }}
+          P5002_S04_RUN_ID: ${{ inputs.s04_run_id }}
+          P5002_DURATION_SECONDS: ${{ inputs.duration_seconds }}
+          P5002_SAMPLE_SECONDS: ${{ inputs.sample_seconds }}
+          P5002_BLOCK_SECONDS: ${{ inputs.block_seconds }}
+          P5002_CHECKPOINT_SECONDS: ${{ inputs.checkpoint_seconds }}
+        run: |
+          refuse() { echo "p5002: INPUT $1" >&2; exit 2; }
+          case "$P5002_MODE" in CONFIRMATORY|EXPLORATORY) ;; *) refuse mode ;; esac
+          [[ "$P5002_ATTEMPT" =~ ^[1-9][0-9]{0,2}$ ]] || refuse attempt
+          [[ "$P5002_EXPECTED_HEAD" =~ ^[0-9a-f]{40}$ ]] || refuse expected_head
+          [[ "$P5002_REGISTRATION" =~ ^[A-Za-z0-9._/-]{0,200}$ ]] || refuse registration
+          [[ "$P5002_REGISTRATION_SHA256" =~ ^([0-9a-f]{64})?$ ]] || refuse registration_sha256
+          [[ "$P5002_S04_RUN_ID" =~ ^([1-9][0-9]{0,17})?$ ]] || refuse s04_run_id
+          [[ "$P5002_DURATION_SECONDS" =~ ^([1-9][0-9]{0,5})?$ ]] || refuse duration_seconds
+          [[ "$P5002_SAMPLE_SECONDS" =~ ^([1-9][0-9]{0,5})?$ ]] || refuse sample_seconds
+          [[ "$P5002_BLOCK_SECONDS" =~ ^([1-9][0-9]{0,5})?$ ]] || refuse block_seconds
+          [[ "$P5002_CHECKPOINT_SECONDS" =~ ^([1-9][0-9]{0,5})?$ ]] || refuse checkpoint_seconds
+          echo "p5002: inputs ok"
+
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Verify the exact dispatched head
+        env:
+          EXPECTED_HEAD_SHA: ${{ github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD_SHA"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13.5'
+
+      # The VPS job holds no token, so it takes the dispatched tree from this job: exactly the driver, the checker
+      # it imports, the exit helper, the monitor loop it spawns (PR-2b) and the format document (A's decision 6).
+      # The declaration names this archive's SHA-256, so it is made before the plan.
+      - name: Archive the dispatched tree for the VPS job
+        id: source
+        run: |
+          set -euo pipefail
+          mkdir -p target/p5002
+          git archive --format=tar -o target/p5002/source.tar HEAD -- tools/claude_track_p5002_driver.py \
+            tools/claude_track_p5002_check.py tools/claude_track_exit.py tools/claude_track_monitor.py \
+            docs/claude-track/formats/P5002_ENDURANCE_V1.md
+          sha="$(sha256sum target/p5002/source.tar | cut -d ' ' -f 1)"
+          echo "sha256=$sha" >> "$GITHUB_OUTPUT"
+          echo "p5002: source $sha"
+
+      # A dispatch from an attempt tag (CONFIRMATORY, or the TEST_ONLY pilot) cites an S04 run: GET requests only,
+      # ARDR's sequence (claude-track-ardr.yml): the run, its record artifact listing, then the artifact's zip or,
+      # when the artifact is not listed or has expired, the record job's listing and log. The tool judges each answer
+      # before the next request with the checker's own functions of plan check 9; plan reads the saved files again in
+      # the format document's order. With no S04 run named nothing is read and plan refuses.
+      - name: Read the cited S04 run
+        if: startsWith(github.ref, 'refs/tags/ct-p5002-a')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          P5002_S04_RUN_ID: ${{ inputs.s04_run_id }}
+        run: |
+          set -euo pipefail
+          tool=tools/claude_track_p5002_confirm.py
+          dir=target/p5002/s04
+          line=target/p5002/s04-line.json
+          mkdir -p "$dir"
+          ask() {   # one command of the tool: its line is printed and kept, and its exit code is the step's
+            status=0
+            python3 "$tool" "$@" > "$line" || status=$?
+            cat "$line"
+            [ "$status" = 0 ] || exit "$status"
+          }
+          value() {   # one key of the kept line; null as the empty word
+            python3 -c 'import json, sys
+          v = json.load(open(sys.argv[1]))[sys.argv[2]]
+          print("" if v is None else v)' "$line" "$1"
+          }
+          if [ -z "$P5002_S04_RUN_ID" ]; then
+            echo "p5002: no S04 run named"
+            exit 0
+          fi
+          run="repos/$GITHUB_REPOSITORY/actions/runs/$P5002_S04_RUN_ID"
+          gh api "$run" > "$dir/run.json"
+          ask s04-run --dir "$dir" --s04-run-id "$P5002_S04_RUN_ID" --commit "$GITHUB_SHA"
+          attempt=$(value run_attempt)
+          gh api "$run/artifacts?name=s04-record-v2-$P5002_S04_RUN_ID-$attempt" > "$dir/artifacts.json"
+          ask s04-artifact --dir "$dir" --s04-run-id "$P5002_S04_RUN_ID" --run-attempt "$attempt"
+          artifact=$(value id)
+          if [ -n "$artifact" ]; then
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact/zip" > "$dir/record.zip"
+          else
+            gh api "$run/attempts/$attempt/jobs?per_page=100" > "$dir/jobs.json"
+            ask s04-job --dir "$dir" --s04-run-id "$P5002_S04_RUN_ID" --run-attempt "$attempt"
+            job=$(value id)
+            gh api "repos/$GITHUB_REPOSITORY/actions/jobs/$job/logs" > "$dir/job.log"
+          fi
+
+      - name: Plan the attempt and write its declaration
+        env:
+          P5002_MODE: ${{ inputs.mode }}
+          P5002_ATTEMPT: ${{ inputs.attempt }}
+          P5002_EXPECTED_HEAD: ${{ inputs.expected_head }}
+          P5002_REGISTRATION: ${{ inputs.registration }}
+          P5002_REGISTRATION_SHA256: ${{ inputs.registration_sha256 }}
+          P5002_S04_RUN_ID: ${{ inputs.s04_run_id }}
+          P5002_DURATION_SECONDS: ${{ inputs.duration_seconds }}
+          P5002_SAMPLE_SECONDS: ${{ inputs.sample_seconds }}
+          P5002_BLOCK_SECONDS: ${{ inputs.block_seconds }}
+          P5002_CHECKPOINT_SECONDS: ${{ inputs.checkpoint_seconds }}
+          SOURCE_SHA256: ${{ steps.source.outputs.sha256 }}
+          BIN_SHA256: ${{ needs.build.outputs.bin_sha256 }}
+          BITAGI_SHA256: ${{ needs.build.outputs.bitagi_sha256 }}
+          FIXTURE_SHA256: ${{ needs.build.outputs.fixture_sha256 }}
+        run: |
+          set -euo pipefail
+          python3 tools/claude_track_p5002_check.py plan --mode "$P5002_MODE" --attempt "$P5002_ATTEMPT" \
+            --expected-head "$P5002_EXPECTED_HEAD" --source-sha256 "$SOURCE_SHA256" \
+            --bin-sha256 "$BIN_SHA256" --bitagi-sha256 "$BITAGI_SHA256" --fixture-sha256 "$FIXTURE_SHA256" \
+            --declaration target/p5002/declaration.json --registration "$P5002_REGISTRATION" \
+            --registration-sha256 "$P5002_REGISTRATION_SHA256" --s04-run-id "$P5002_S04_RUN_ID" \
+            --s04-dir target/p5002/s04 --duration-seconds "$P5002_DURATION_SECONDS" \
+            --sample-seconds "$P5002_SAMPLE_SECONDS" --block-seconds "$P5002_BLOCK_SECONDS" \
+            --checkpoint-seconds "$P5002_CHECKPOINT_SECONDS"
+
+      # GET requests only: this workflow's dispatch listing (every page), each earlier dispatch's artifact and
+      # attempt-1 jobs listings and, of an earlier dispatch without the marker, its records zip (whether it holds
+      # marker.json says whether that attempt started). Both modes (an EXPLORATORY dispatch reads its own run only,
+      # and names no registration: the pilot's TEST_ONLY file is not one).
+      - name: Refuse an attempt that is not the next one
+        env:
+          GH_TOKEN: ${{ github.token }}
+          P5002_MODE: ${{ inputs.mode }}
+          P5002_ATTEMPT: ${{ inputs.attempt }}
+          P5002_REGISTRATION_SHA256: ${{ inputs.registration_sha256 }}
+        run: |
+          set -euo pipefail
+          registration=""
+          if [ "$P5002_MODE" = CONFIRMATORY ]; then registration="$P5002_REGISTRATION_SHA256"; fi
+          tool=tools/claude_track_p5002_confirm.py
+          listing=target/p5002/listing
+          attempts=target/p5002/attempts
+          line=target/p5002/line.json
+          mkdir -p "$listing" "$attempts"
+          ask() {   # one command of the tool: its line is printed and kept, and its exit code is the step's
+            status=0
+            python3 "$tool" "$@" > "$line" || status=$?
+            cat "$line"
+            [ "$status" = 0 ] || exit "$status"
+          }
+          value() {   # one key of the kept line; a list as words
+            python3 -c 'import json, sys
+          v = json.load(open(sys.argv[1]))[sys.argv[2]]
+          print(" ".join(map(str, v)) if isinstance(v, list) else v)' "$line" "$1"
+          }
+          query="event=workflow_dispatch&per_page=100"
+          base="repos/$GITHUB_REPOSITORY/actions/workflows/claude-track-p5002.yml/runs?$query"
+          gh api "$base&page=1" > "$listing/runs-1.json"
+          ask pages --dir "$listing"
+          pages=$(value pages)
+          for page in $(seq 2 "$pages"); do
+            gh api "$base&page=$page" > "$listing/runs-$page.json"
+          done
+          ask runs --mode "$P5002_MODE" --registration-sha256 "$registration" --listing "$listing" \
+            --run-id "$GITHUB_RUN_ID"
+          runs=$(value runs)
+          for id in $runs; do
+            if [ "$id" = "$GITHUB_RUN_ID" ]; then continue; fi
+            mkdir "$attempts/$id"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id/artifacts?per_page=100" > "$attempts/$id/artifacts.json"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id/attempts/1/jobs?per_page=100" > "$attempts/$id/jobs.json"
+            ask downloads --dir "$attempts/$id" --run-id "$id"
+            counted=$(value counted)
+            pairs=$(value downloads)
+            if [ "$counted" = True ]; then continue; fi
+            for pair in $pairs; do
+              gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/${pair#*:}/zip" > "$attempts/$id/${pair%%:*}.zip"
+            done
+          done
+          ask continuity --mode "$P5002_MODE" --registration-sha256 "$registration" \
+            --listing "$listing" --attempts "$attempts" --run-id "$GITHUB_RUN_ID" --head-sha "$GITHUB_SHA" \
+            --attempt "$P5002_ATTEMPT"
+
+      - name: Upload the declaration
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-declaration
+          path: target/p5002/declaration.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Upload the tree
+        timeout-minutes: 10
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-source
+          path: target/p5002/source.tar
+          retention-days: 3
+          if-no-files-found: error
+
+  observe:
+    name: P5-002 observe (VPS)
+    needs: plan
+    runs-on: bitagi-ct7a-vps
+    timeout-minutes: 1760
+    permissions: {}
+    steps:
+      - name: Refuse a re-run, another ref or another head
+        shell: bash
+        env:
+          P5002_MODE: ${{ inputs.mode }}
+          P5002_EXPECTED_HEAD: ${{ inputs.expected_head }}
+        run: |
+          [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] || { echo "p5002: EVENT" >&2; exit 2; }
+          [ "$GITHUB_RUN_ATTEMPT" = 1 ] || { echo "p5002: RUN_ATTEMPT" >&2; exit 2; }
+          [ "$P5002_EXPECTED_HEAD" = "$GITHUB_SHA" ] || { echo "p5002: EXPECTED_HEAD" >&2; exit 2; }
+          case "$GITHUB_REF" in
+            refs/tags/ct-p5002-a[1-9]|refs/tags/ct-p5002-a[1-9][0-9]|refs/tags/ct-p5002-a[1-9][0-9][0-9])
+              case "$P5002_MODE" in CONFIRMATORY|EXPLORATORY) ;; *) echo "p5002: REF" >&2; exit 2 ;; esac ;;
+            refs/heads/main) [ "$P5002_MODE" = EXPLORATORY ] || { echo "p5002: REF" >&2; exit 2; } ;;
+            *) echo "p5002: REF" >&2; exit 2 ;;
+          esac
+          echo "p5002: observe job of run $GITHUB_RUN_ID at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+      - name: Download the dispatched tree
+        timeout-minutes: 5
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: p5002-source
+          path: ${{ runner.temp }}/p5002-source
+
+      - name: Unpack the tree after its SHA-256
+        env:
+          SOURCE_SHA256: ${{ needs.plan.outputs.source_sha256 }}
+        run: |
+          set -euo pipefail
+          echo "$SOURCE_SHA256  $RUNNER_TEMP/p5002-source/source.tar" | sha256sum -c -
+          tar -xf "$RUNNER_TEMP/p5002-source/source.tar"
+          rm -f "$RUNNER_TEMP/p5002-source/source.tar"
+
+      - name: Download the declaration
+        timeout-minutes: 5
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: p5002-declaration
+          path: target/p5002
+
+      # The build job's two binaries (A's decision 2): the tar's SHA-256 before it is unpacked; `start` checks
+      # each file's against the declaration before it runs either.
+      - name: Download the binaries
+        timeout-minutes: 5
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: p5002-bin
+          path: ${{ runner.temp }}/p5002-bin
+
+      - name: Unpack the binaries after their SHA-256
+        env:
+          BIN_SHA256: ${{ needs.plan.outputs.bin_sha256 }}
+        run: |
+          set -euo pipefail
+          echo "$BIN_SHA256  $RUNNER_TEMP/p5002-bin/p5002-bin.tar" | sha256sum -c -
+          mkdir "$RUNNER_TEMP/p5002-bin/bin"
+          tar --no-same-owner -xf "$RUNNER_TEMP/p5002-bin/p5002-bin.tar" -C "$RUNNER_TEMP/p5002-bin/bin"
+          rm -f "$RUNNER_TEMP/p5002-bin/p5002-bin.tar"
+
+      - name: Set up Python
+        timeout-minutes: 10
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13.5'
+
+      # Archive and bitcoind hashes are claude-track-xd1-confirmatory.yml's (the checker's BITCOIND_SHA256).
+      - name: Fetch and verify Bitcoin Core 31.1 and 30.3
+        timeout-minutes: 10
+        working-directory: ${{ runner.temp }}
+        run: |
+          set -euo pipefail
+          fetch() {
+            name="bitcoin-$1-x86_64-linux-gnu.tar.gz"
+            curl -fsSL --retry 3 -o "$name" "https://bitcoincore.org/bin/bitcoin-core-$1/$name"
+            echo "$2  $name" | sha256sum -c -
+            tar -xzf "$name"
+            echo "$3  bitcoin-$1/bin/bitcoind" | sha256sum -c -
+          }
+          fetch 31.1 b80d9c3e04da78fb6f0569685673418cf686fadba9042d926d13fb87ff503f9e 986e63b3c8770f08d0059820ad3dd085d1ab9e1bea23946c243f858a06888a08
+          fetch 30.3 4753cd70416c629a2090503e8545a3c05e94a0f5037f8fb97b4c35c6e1afee0e 30d4fa871a5447be1f57f195c3fd021c6fa44f920693aa4650e61769326edca8
+
+      # The binaries, nodes, the challenge check, heights 1..199, the replay store, the monitor loop, the daemon and
+      # sample 0. A refusal here leaves no marker: the attempt never started.
+      - name: Start the nodes, the pre-mine and the daemon
+        timeout-minutes: 70
+        env:
+          SOURCE_SHA256: ${{ needs.plan.outputs.source_sha256 }}
+        run: |
+          set -euo pipefail
+          python3 tools/claude_track_p5002_driver.py start --declaration target/p5002/declaration.json \
+            --source-sha256 "$SOURCE_SHA256" --node-a "$RUNNER_TEMP/bitcoin-31.1/bin" \
+            --node-b "$RUNNER_TEMP/bitcoin-30.3/bin" --bin-dir "$RUNNER_TEMP/p5002-bin/bin" \
+            --records target/p5002/records --work target/p5002/work
+
+      # From here on the attempt counts. Its server time is anchor 0. A dispatch without this artifact never started,
+      # unless a checkpoint artifact, marker.json in its records or this step's success shows that it did (the format
+      # document's section 8.3: MARKER_MISSING).
+      - name: Upload the marker
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-started
+          path: target/p5002/records/marker.json
+          retention-days: 90
+          if-no-files-found: error
+
+      # 26 pairs: the driver waits for checkpoint K's slot (or the daemon's end) and writes checkpoint-K.json; its
+      # upload's server time is anchor K. A pair beyond the declared checkpoints writes nothing and uploads nothing.
+      - name: Checkpoint 1
+        id: checkpoint_1
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 1 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 1
+        if: steps.checkpoint_1.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-1
+          path: target/p5002/records/checkpoint-1.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 2
+        id: checkpoint_2
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 2 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 2
+        if: steps.checkpoint_2.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-2
+          path: target/p5002/records/checkpoint-2.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 3
+        id: checkpoint_3
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 3 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 3
+        if: steps.checkpoint_3.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-3
+          path: target/p5002/records/checkpoint-3.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 4
+        id: checkpoint_4
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 4 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 4
+        if: steps.checkpoint_4.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-4
+          path: target/p5002/records/checkpoint-4.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 5
+        id: checkpoint_5
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 5 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 5
+        if: steps.checkpoint_5.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-5
+          path: target/p5002/records/checkpoint-5.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 6
+        id: checkpoint_6
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 6 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 6
+        if: steps.checkpoint_6.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-6
+          path: target/p5002/records/checkpoint-6.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 7
+        id: checkpoint_7
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 7 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 7
+        if: steps.checkpoint_7.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-7
+          path: target/p5002/records/checkpoint-7.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 8
+        id: checkpoint_8
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 8 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 8
+        if: steps.checkpoint_8.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-8
+          path: target/p5002/records/checkpoint-8.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 9
+        id: checkpoint_9
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 9 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 9
+        if: steps.checkpoint_9.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-9
+          path: target/p5002/records/checkpoint-9.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 10
+        id: checkpoint_10
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 10 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 10
+        if: steps.checkpoint_10.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-10
+          path: target/p5002/records/checkpoint-10.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 11
+        id: checkpoint_11
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 11 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 11
+        if: steps.checkpoint_11.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-11
+          path: target/p5002/records/checkpoint-11.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 12
+        id: checkpoint_12
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 12 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 12
+        if: steps.checkpoint_12.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-12
+          path: target/p5002/records/checkpoint-12.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 13
+        id: checkpoint_13
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 13 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 13
+        if: steps.checkpoint_13.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-13
+          path: target/p5002/records/checkpoint-13.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 14
+        id: checkpoint_14
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 14 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 14
+        if: steps.checkpoint_14.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-14
+          path: target/p5002/records/checkpoint-14.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 15
+        id: checkpoint_15
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 15 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 15
+        if: steps.checkpoint_15.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-15
+          path: target/p5002/records/checkpoint-15.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 16
+        id: checkpoint_16
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 16 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 16
+        if: steps.checkpoint_16.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-16
+          path: target/p5002/records/checkpoint-16.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 17
+        id: checkpoint_17
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 17 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 17
+        if: steps.checkpoint_17.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-17
+          path: target/p5002/records/checkpoint-17.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 18
+        id: checkpoint_18
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 18 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 18
+        if: steps.checkpoint_18.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-18
+          path: target/p5002/records/checkpoint-18.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 19
+        id: checkpoint_19
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 19 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 19
+        if: steps.checkpoint_19.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-19
+          path: target/p5002/records/checkpoint-19.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 20
+        id: checkpoint_20
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 20 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 20
+        if: steps.checkpoint_20.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-20
+          path: target/p5002/records/checkpoint-20.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 21
+        id: checkpoint_21
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 21 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 21
+        if: steps.checkpoint_21.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-21
+          path: target/p5002/records/checkpoint-21.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 22
+        id: checkpoint_22
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 22 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 22
+        if: steps.checkpoint_22.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-22
+          path: target/p5002/records/checkpoint-22.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 23
+        id: checkpoint_23
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 23 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 23
+        if: steps.checkpoint_23.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-23
+          path: target/p5002/records/checkpoint-23.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 24
+        id: checkpoint_24
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 24 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 24
+        if: steps.checkpoint_24.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-24
+          path: target/p5002/records/checkpoint-24.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 25
+        id: checkpoint_25
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 25 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 25
+        if: steps.checkpoint_25.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-25
+          path: target/p5002/records/checkpoint-25.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Checkpoint 26
+        id: checkpoint_26
+        timeout-minutes: 75
+        run: |
+          python3 tools/claude_track_p5002_driver.py checkpoint --records target/p5002/records \
+            --work target/p5002/work --index 26 --github-output "$GITHUB_OUTPUT"
+
+      - name: Upload checkpoint 26
+        if: steps.checkpoint_26.outputs.scheduled == 'true'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-checkpoint-26
+          path: target/p5002/records/checkpoint-26.json
+          retention-days: 90
+          if-no-files-found: error
+
+      # Always: the daemon, the monitor and both nodes are stopped, the replay follows once more, the critical
+      # heights are read once more, final.json is written.
+      - name: Finish the attempt
+        if: always()
+        timeout-minutes: 25
+        run: |
+          python3 tools/claude_track_p5002_driver.py finish --records target/p5002/records --work target/p5002/work
+
+      - name: Upload the records
+        if: always()
+        timeout-minutes: 10
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-records
+          path: target/p5002/records/
+          retention-days: 90
+          if-no-files-found: warn
+
+  report:
+    name: P5-002 report (hosted)
+    needs: [plan, observe]
+    if: always() && needs.plan.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Verify the exact dispatched head
+        env:
+          EXPECTED_HEAD_SHA: ${{ github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD_SHA"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13.5'
+
+      # GET requests only, both modes: every page of this workflow's dispatch listing, then per run read its
+      # artifact listing, its attempt-1 jobs listing and the zips the tool names (an EXPLORATORY dispatch reads its
+      # own run only; of a run that never started only its records, for a critical read made before the marker).
+      - name: Read the dispatch listing and every attempt's artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          P5002_MODE: ${{ inputs.mode }}
+          P5002_REGISTRATION_SHA256: ${{ inputs.registration_sha256 }}
+        run: |
+          set -euo pipefail
+          case "$P5002_MODE" in CONFIRMATORY|EXPLORATORY) ;; *) echo "p5002: INPUT mode" >&2; exit 2 ;; esac
+          [[ "$P5002_REGISTRATION_SHA256" =~ ^([0-9a-f]{64})?$ ]] || { echo "p5002: INPUT registration_sha256" >&2; exit 2; }
+          registration=""
+          if [ "$P5002_MODE" = CONFIRMATORY ]; then registration="$P5002_REGISTRATION_SHA256"; fi
+          tool=tools/claude_track_p5002_confirm.py
+          listing=target/p5002/listing
+          attempts=target/p5002/attempts
+          line=target/p5002/line.json
+          mkdir -p "$listing" "$attempts"
+          ask() {   # one command of the tool: its line is printed and kept, and its exit code is the step's
+            status=0
+            python3 "$tool" "$@" > "$line" || status=$?
+            cat "$line"
+            [ "$status" = 0 ] || exit "$status"
+          }
+          value() {   # one key of the kept line; a list as words
+            python3 -c 'import json, sys
+          v = json.load(open(sys.argv[1]))[sys.argv[2]]
+          print(" ".join(map(str, v)) if isinstance(v, list) else v)' "$line" "$1"
+          }
+          query="event=workflow_dispatch&per_page=100"
+          base="repos/$GITHUB_REPOSITORY/actions/workflows/claude-track-p5002.yml/runs?$query"
+          gh api "$base&page=1" > "$listing/runs-1.json"
+          ask pages --dir "$listing"
+          pages=$(value pages)
+          for page in $(seq 2 "$pages"); do
+            gh api "$base&page=$page" > "$listing/runs-$page.json"
+          done
+          ask runs --mode "$P5002_MODE" --registration-sha256 "$registration" --listing "$listing" \
+            --run-id "$GITHUB_RUN_ID"
+          runs=$(value runs)
+          for id in $runs; do
+            dir="$attempts/$id"
+            mkdir "$dir"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id/artifacts?per_page=100" > "$dir/artifacts.json"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id/attempts/1/jobs?per_page=100" > "$dir/jobs.json"
+            ask downloads --dir "$dir" --run-id "$id"
+            pairs=$(value downloads)
+            for pair in $pairs; do
+              gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/${pair#*:}/zip" > "$dir/${pair%%:*}.zip"
+            done
+          done
+
+      # The SHA-256 lines printed here are the report's and the observation list's identity: a file fetched from
+      # an artifact is compared with them before it is used (the format document's section 11).
+      - name: Write the collection report and the observation list
+        env:
+          P5002_MODE: ${{ inputs.mode }}
+          P5002_REGISTRATION_SHA256: ${{ inputs.registration_sha256 }}
+          SOURCE_SHA256: ${{ needs.plan.outputs.source_sha256 }}
+        run: |
+          set -euo pipefail
+          case "$P5002_MODE" in CONFIRMATORY|EXPLORATORY) ;; *) echo "p5002: INPUT mode" >&2; exit 2 ;; esac
+          [[ "$P5002_REGISTRATION_SHA256" =~ ^([0-9a-f]{64})?$ ]] || { echo "p5002: INPUT registration_sha256" >&2; exit 2; }
+          registration=""
+          if [ "$P5002_MODE" = CONFIRMATORY ]; then registration="$P5002_REGISTRATION_SHA256"; fi
+          status=0
+          python3 tools/claude_track_p5002_confirm.py report --mode "$P5002_MODE" \
+            --registration-sha256 "$registration" --listing target/p5002/listing \
+            --attempts target/p5002/attempts --run-id "$GITHUB_RUN_ID" --head-sha "$GITHUB_SHA" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" --source-sha256 "$SOURCE_SHA256" \
+            --output target/p5002/report.json --observations target/p5002/observations.json || status=$?
+          for file in target/p5002/report.json target/p5002/observations.json; do
+            if [ -f "$file" ]; then
+              sha256sum "$file"
+              cat "$file"
+            fi
+          done
+          exit "$status"
+
+      - name: Upload the report
+        if: always()
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p5002-report-attempt-${{ github.run_attempt }}
+          path: |
+            target/p5002/report.json
+            target/p5002/observations.json
+          retention-days: 90
+          if-no-files-found: warn
+          overwrite: true
