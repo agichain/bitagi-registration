@@ -1,0 +1,945 @@
+name: claude-track-ardr
+
+# CT-P5-001 D4 (A #258 issuecomment-6537782009 section 1, Q5, Q6, Q9,
+# section 3 and section 4 row D4; -6539879887 section 3): the ARDR campaign
+# workflow. tools/claude_track_ardr_slices.py plans, runs and collects;
+# tools/claude_track_ardr_driver.py (D1) runs each unit as a black box. The
+# format is docs/claude-track/formats/ARDR_RUN_V1.md section 13.
+#
+# pull_request: the PR smoke, N = 1, EXPLORATORY (driver mode PR_SMOKE) on
+# the four-node topology (Core 31.1 and 30.3), through the same plan, slice
+# and collect commands as a dispatch; its collection holds no observation.
+# The job also runs the driver's and the campaign's RealNodes tests on the
+# same nodes (the campaign's with the tree's own D2-2) and fails if any of
+# them is skipped.
+#
+# workflow_dispatch: A dispatches from main only, first attempt only (Q5;
+# AGENTS.md section 6 and the VPS preparation section 3.6 rule: nobody else
+# dispatches it). plan checks the inputs and the 330-minute slice budget;
+# for a CONFIRMATORY dispatch it checks the re-dispatch rule against every
+# earlier CONFIRMATORY dispatch run of the experiment (chosen by its run
+# name, read in pages, its declaration, collection and plan job), and
+# derives the S04 citation from the server: the s04_run_id input names a main push run of
+# claude-track-rx02.yml, read with the Actions API, and its record comes
+# from that run's s04-record-v2 artifact or, when the artifact is expired
+# or missing, from its record job's log (never a committed copy). Each
+# slice job first writes its record with every unit BEFORE_START (so a
+# setup failure dispatches nothing), then runs its units (a CONFIRMATORY
+# slice carries plan's citation, shape-checked; every S04 refusal is in
+# plan) and uploads its record and raw logs always;
+# collect derives the collection and the BITAGI_CT_OBSERVATION_LIST_V1 from
+# this run's own records and the server's jobs listing. ITEM3 has no campaign
+# command yet: the driver refuses its CONFIRMATORY unit before it starts
+# (CONFIRMATORY_CAMPAIGN_NOT_BUILT, exit 3). D3a-2b-2b (A #258
+# issuecomment-6557723699 Q5-Q6, corrected by -6557914275; ARDR_RUN_V1
+# section 26): an ITEM2 or item-4 CONFIRMATORY unit runs the L0 project seat
+# through the driver, so its slice builds the L0 host worker and the offline
+# signer first, and the ardr-l0-real-nodes job runs the L0 real-node rows on
+# a pull request. Until A sets the L0 freeze values the driver refuses such
+# a unit before any node (L0_FREEZE_PENDING, exit 3); a CONFIRMATORY
+# ITEM4_REORG unit takes the TEST_ONLY release only (B-B1, 045b :1069).
+#
+# Permissions: contents read; the three dispatch jobs and the recollect job
+# add actions read for one GET-only step each (gh api), which reads the job's
+# server started_at (Q9), this run's jobs, or the earlier dispatch runs and
+# their two artifacts (and recollections) and the cited S04 run, its record
+# artifact or record job log, or (recollect) the original run, its jobs and
+# its own artifacts. No write scope, no secret, no push, comment, label or
+# attestation step. FD-CT-91: the daily job-minute record and its 2x alert
+# stay as they are. Class T Regtest development evidence only, not
+# S17-PREP; the collection is not yet bound to an authenticated append-only
+# log (#110 stays open).
+# The run name carries the mode and experiment: plan picks the earlier
+# CONFIRMATORY runs of the experiment by it (display_title). A RECOLLECT
+# dispatch (D4-2, collect-only recovery) adds the run id it recollects.
+run-name: ${{ github.event_name == 'workflow_dispatch' && (inputs.mode == 'RECOLLECT' && format('ardr RECOLLECT {0} {1}', inputs.experiment, inputs.recollect_run_id) || format('ardr {0} {1}', inputs.mode, inputs.experiment)) || format('ardr PR smoke {0}', github.ref_name) }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      experiment:
+        description: Experiment (ARDR_RUN_V1 section 3 names)
+        required: true
+        type: choice
+        options: [ITEM1, ITEM2, ITEM3, ITEM4_SELF_DEALING, ITEM4_FEE_ASYMMETRY, ITEM4_CENSORSHIP, ITEM4_REORG, POOL]
+      mode:
+        description: CONFIRMATORY, EXPLORATORY, or RECOLLECT (collect-only recovery of one CONFIRMATORY run of this experiment; the unit and policy inputs are not read)
+        required: true
+        type: choice
+        options: [EXPLORATORY, CONFIRMATORY, RECOLLECT]
+      unit_first:
+        description: First run index of the unit range
+        required: true
+        type: number
+      unit_last:
+        description: Last run index of the unit range (at most 400 units)
+        required: true
+        type: number
+      units_per_slice:
+        description: Units per slice job
+        required: true
+        type: number
+      unit_minutes:
+        description: Minutes one unit may take (30 + units_per_slice x this + 15 must fit 330)
+        required: true
+        type: number
+      policy:
+        description: Policy file path in this commit
+        required: true
+        type: string
+      registration:
+        description: Registration file path in this commit (CONFIRMATORY only)
+        required: false
+        type: string
+      registration_sha256:
+        description: SHA-256 of the registration file (CONFIRMATORY only)
+        required: false
+        type: string
+      s04_run_id:
+        description: Run id of the main push claude-track-rx02 run whose S04 record the slices cite (CONFIRMATORY only; EXPLORATORY ignores it)
+        required: false
+        type: string
+      recollect_run_id:
+        description: Run id of the CONFIRMATORY dispatch of this experiment whose collection RECOLLECT rebuilds from its own slice artifacts (RECOLLECT only)
+        required: false
+        type: string
+  pull_request:
+    branches: [main]
+    paths:
+      - tools/claude_track_ardr_driver.py
+      - tools/claude_track_ardr_slices.py
+      - tools/claude_track_regtest_offline_export.py
+      - tools/claude_track_exit.py
+      - tools/common.py
+      - docs/claude-track/formats/ARDR_RUN_V1.md
+      - tests/claude_track/test_ardr_driver.py
+      - tests/claude_track/test_ardr_workflow.py
+      - tests/claude_track/ardr_pr_smoke_policy_draft.json
+      - tests/claude_track/ardr_s04_job_log_41141733654_excerpt.txt
+      - tools/claude_track_ardr_campaign.py
+      - tools/claude_track_ardr_truth.py
+      - tools/claude_track_ardr_bidders.py
+      - tools/claude_track_ardr_cluster.py
+      - crates/bitagi-signer/tests/ardr_bidder_generator.rs
+      # Cargo reads every workspace member's manifest when it builds the worker (#597 family), and the
+      # lock file, the root manifest and the toolchain file (round 2, P3-E; as claude-track-crash1000.yml).
+      - crates/*/Cargo.toml
+      - Cargo.toml
+      - Cargo.lock
+      - rust-toolchain.toml
+      - tests/claude_track/test_ardr_campaign.py
+      - tests/claude_track/ardr_pr_smoke_item1_policy_draft.json
+      - tools/claude_track_ardr_item2.py
+      - tests/claude_track/test_ardr_item2.py
+      - tools/claude_track_ardr_item4.py
+      - tests/claude_track/test_ardr_item4.py
+      # D3a-2b-2b: the L0 seat, its tests and the two Rust test files whose workers the L0 rows build and run.
+      - tools/claude_track_ardr_l0.py
+      - tools/claude_track_ardr_throughput.py
+      - tests/claude_track/test_ardr_l0.py
+      - tests/claude_track/test_ardr_item4_l0.py
+      - crates/bitagi-launch-host/tests/two_node_launch_accept.rs
+      - crates/bitagi-signer/tests/launch_host_e2e_sign.rs
+      # Pre-PR review P3-1 / P3-3: the hosted L0 job's row runner.
+      - tests/claude_track/ardr_l0_rows.py
+      # #667 A integration check P3-1 (A Q3 (b), For A 1): the L0 rows build and run these two crates' test helpers
+      # and workers on real nodes, so any change under them runs the rows (not a required check).
+      - crates/bitagi-launch-host/**
+      - crates/bitagi-signer/**
+      # Desktop r4439277039 (P2): the two workers also compile the source of every crate they depend on by path.
+      # This list is the path-dependency closure of the two worker crates ([dependencies], [build-dependencies]
+      # and [target.*] path deps, transitively, plus the two crates' [dev-dependencies]); test_ardr_workflow
+      # computes it from the Cargo.toml files and pins it.
+      - crates/bitagi-bitcoin/src/**
+      - crates/bitagi-core/src/**
+      - crates/bitagi-h0-receipt/src/**
+      - crates/bitagi-hash/src/**
+      - crates/bitagi-launch/src/**
+      - crates/bitagi-launch-transport/src/**
+      - crates/bitagi-profile/src/**
+      - crates/bitagi-store/src/**
+      - crates/bitagi-types/src/**
+      - crates/bitagi-wallet/src/**
+      - crates/bitagi-wire/src/**
+      - .github/workflows/claude-track-ardr.yml
+
+permissions:
+  contents: read
+
+# A pull request cancels its own superseded runs. An EXPLORATORY dispatch gets
+# its own group, so a later push or dispatch never cancels it (CR-22). The
+# CONFIRMATORY dispatches of one experiment share one group and never run at
+# once (cancel-in-progress stays false): the later one starts after the
+# earlier one completed, so its plan reads the earlier one's collection; a
+# queued one that a newer dispatch replaces is cancelled before any job runs
+# and declares nothing (ARDR_RUN_V1 section 13, B default D-1). A RECOLLECT
+# dispatch joins its experiment's CONFIRMATORY group, so it never overlaps a
+# CONFIRMATORY run of the experiment (D4-2).
+concurrency:
+  group: claude-track-ardr-${{ github.event_name == 'pull_request' && github.ref || (inputs.mode == 'CONFIRMATORY' || inputs.mode == 'RECOLLECT') && format('confirmatory-{0}', inputs.experiment) || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  pr-smoke:
+    name: ARDR PR smoke, N = 1 EXPLORATORY, and the RealNodes tests (Core 31.1 + 30.3, Class T)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    # D2-3a step 7: the step limits add up to 95 minutes (toolchain 5, worker build 15, RealNodes 30, the two
+    # smokes 20 each, upload 5); a run takes about 15 (the note's hosted numbers).
+    timeout-minutes: 100
+    # Round 2, P3-B: every step that runs cargo or the driver (which calls cargo for the worker) uses the
+    # worker build's non-incremental artifacts, so no unit recompiles the workspace inside its own time.
+    env:
+      CARGO_INCREMENTAL: '0'
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Verify the exact candidate head
+        env:
+          EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD_SHA"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13.5'
+
+      # Archive and bitcoind hashes are claude-track-launch-matrix.yml's.
+      - name: Fetch and verify Bitcoin Core 31.1 and 30.3
+        working-directory: ${{ runner.temp }}
+        run: |
+          set -euo pipefail
+          fetch() {
+            name="bitcoin-$1-x86_64-linux-gnu.tar.gz"
+            curl -fsSL --retry 3 -o "$name" "https://bitcoincore.org/bin/bitcoin-core-$1/$name"
+            echo "$2  $name" | sha256sum -c -
+            tar -xzf "$name"
+            echo "$3  bitcoin-$1/bin/bitcoind" | sha256sum -c -
+          }
+          fetch 31.1 b80d9c3e04da78fb6f0569685673418cf686fadba9042d926d13fb87ff503f9e 986e63b3c8770f08d0059820ad3dd085d1ab9e1bea23946c243f858a06888a08
+          fetch 30.3 4753cd70416c629a2090503e8545a3c05e94a0f5037f8fb97b4c35c6e1afee0e 30d4fa871a5447be1f57f195c3fd021c6fa44f920693aa4650e61769326edca8
+
+      # D2-3a step 7: the Rust worker (D2-1's generator, chained BIRTH) that ITEM1 and POOL units call
+      # through cargo; built once here, before the first unit.
+      - name: Install pinned Rust toolchain
+        timeout-minutes: 5
+        run: rustup show active-toolchain || rustup toolchain install
+
+      - name: Build the ARDR bidder generator worker
+        timeout-minutes: 15
+        run: cargo test --locked --no-run -p bitagi-signer --test ardr_bidder_generator
+
+      # Round 2, P3-C: the campaign's RealNodes too (A Q7 condition 3, the pool producers, ITEM1's planted
+      # gates through the tree's own D2-2; BITAGI_ARDR_CLUSTER_TOOL is never set here, so a tree without
+      # tools/claude_track_ardr_cluster.py skips that cell and the step fails).
+      # D2-3b (B): the item-2 RealNodes cells too, on the short override schedule only (never the drawn
+      # t_G; that cell is RealNodesDrawnTGate, local only).
+      - name: Run the driver's and the campaign's RealNodes tests, none skipped
+        timeout-minutes: 30
+        run: |
+          set -euo pipefail
+          unset BITAGI_ARDR_CLUSTER_TOOL
+          BITAGI_ARDR_CORE_31_1="$RUNNER_TEMP/bitcoin-31.1/bin" BITAGI_ARDR_CORE_30_3="$RUNNER_TEMP/bitcoin-30.3/bin" \
+            python3 -m unittest -v tests.claude_track.test_ardr_driver.RealNodes \
+            tests.claude_track.test_ardr_campaign.RealNodes \
+            tests.claude_track.test_ardr_item2.RealNodes \
+            tests.claude_track.test_ardr_item4.RealNodes 2>&1 | tee "$RUNNER_TEMP/realnodes.log"
+          ! grep -q 'skipped' "$RUNNER_TEMP/realnodes.log"
+
+      - name: PR smoke, one unit through plan, slice and collect
+        timeout-minutes: 20
+        run: |
+          set -euo pipefail
+          mkdir -p target/ardr/records
+          python3 tools/claude_track_ardr_slices.py plan --experiment ITEM2 --mode EXPLORATORY \
+            --unit-first 0 --unit-last 0 --units-per-slice 1 --unit-minutes 15 \
+            --policy tests/claude_track/ardr_pr_smoke_policy_draft.json \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" --commit "$(git rev-parse HEAD)" \
+            --out target/ardr/declaration.json
+          python3 tools/claude_track_ardr_slices.py slice-begin --declaration target/ardr/declaration.json \
+            --slice 1 --mode PR_SMOKE --out-dir target/ardr/records/ardr-slice-1
+          python3 tools/claude_track_ardr_slices.py slice --declaration target/ardr/declaration.json --slice 1 \
+            --mode PR_SMOKE --node-a "$RUNNER_TEMP/bitcoin-31.1/bin" --node-b "$RUNNER_TEMP/bitcoin-30.3/bin" \
+            --work-root "$RUNNER_TEMP/ardr-work" --out-dir target/ardr/records/ardr-slice-1
+          python3 tools/claude_track_ardr_slices.py collect --declaration target/ardr/declaration.json \
+            --records target/ardr/records --out-collection target/ardr/collection.json \
+            --out-observations target/ardr/observations.json | tee target/ardr/collect.json
+          python3 - <<'EOF'
+          import json, os
+          summary = json.load(open('target/ardr/collect.json'))
+          ok = (summary['observations'], summary['states']['OBSERVED']) == (0, 1)
+          ok = ok and not os.path.exists('target/ardr/observations.json')
+          raise SystemExit(0 if ok else 2)
+          EOF
+
+      # D2-3a step 7: one ITEM1 unit (run 0, four gates, the draft policy's params) through the same plan,
+      # slice and collect commands; the run ends with D2-2 on Node A (ARDR_RUN_V1 sections 16-19).
+      - name: ITEM1 PR smoke, one unit through plan, slice and collect
+        timeout-minutes: 20
+        run: |
+          set -euo pipefail
+          mkdir -p target/ardr/item1/records
+          python3 tools/claude_track_ardr_slices.py plan --experiment ITEM1 --mode EXPLORATORY \
+            --unit-first 0 --unit-last 0 --units-per-slice 1 --unit-minutes 15 \
+            --policy tests/claude_track/ardr_pr_smoke_item1_policy_draft.json \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" --commit "$(git rev-parse HEAD)" \
+            --out target/ardr/item1/declaration.json
+          python3 tools/claude_track_ardr_slices.py slice-begin --declaration target/ardr/item1/declaration.json \
+            --slice 1 --mode PR_SMOKE --out-dir target/ardr/item1/records/ardr-slice-1
+          python3 tools/claude_track_ardr_slices.py slice --declaration target/ardr/item1/declaration.json --slice 1 \
+            --mode PR_SMOKE --node-a "$RUNNER_TEMP/bitcoin-31.1/bin" --node-b "$RUNNER_TEMP/bitcoin-30.3/bin" \
+            --work-root "$RUNNER_TEMP/ardr-work-item1" --out-dir target/ardr/item1/records/ardr-slice-1
+          python3 tools/claude_track_ardr_slices.py collect --declaration target/ardr/item1/declaration.json \
+            --records target/ardr/item1/records --out-collection target/ardr/item1/collection.json \
+            --out-observations target/ardr/item1/observations.json | tee target/ardr/item1/collect.json
+          python3 - <<'EOF'
+          import json, os
+          summary = json.load(open('target/ardr/item1/collect.json'))
+          ok = (summary['observations'], summary['states']['OBSERVED']) == (0, 1)
+          ok = ok and not os.path.exists('target/ardr/item1/observations.json')
+          raise SystemExit(0 if ok else 2)
+          EOF
+          test "$(grep -c '"event":"GATE_END"' target/ardr/item1/records/ardr-slice-1/raw-0.jsonl)" = "$(python3 -c \
+            "import json; print(json.load(open('tests/claude_track/ardr_pr_smoke_item1_policy_draft.json'))['experiments']['ITEM1']['params']['gates_per_run'])")"
+          grep -q '"event":"CLUSTER_TOOL"' target/ardr/item1/records/ardr-slice-1/raw-0.jsonl
+
+      - name: Upload the PR smoke records
+        if: always()
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ardr-pr-smoke-exploratory
+          path: target/ardr/
+          retention-days: 30
+          if-no-files-found: warn
+
+  # D3a-2b-2b (A #258 issuecomment-6557723699 Q6; B's decision: its own job, in parallel with pr-smoke, for
+  # wall-clock and failure attribution): the L0 real-node rows hosted, on the built workers. Item 4 with the L0
+  # seat (self dealing, fee asymmetry, censorship, reorg depth 1 and 2) and item 2 with the L0 seat (ladder rows
+  # a, b, c); the censorship control row (a turn at every block) stays local. None may be skipped. Pull requests
+  # only; no dispatch path. The step limits add up to 100 minutes (toolchain 5, Core 10, generator 15, L0 build
+  # 30, rows 40); the D3a-2b-2b note expects about 15-25 minutes per run.
+  ardr-l0-real-nodes:
+    name: ARDR L0 real-node rows (Core 31.1 + 30.3, Class T)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 105
+    env:
+      CARGO_INCREMENTAL: '0'
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Verify the exact candidate head
+        env:
+          EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD_SHA"
+
+      # A #258 issuecomment-6565897037 Q3 (b): the rows run only when the PR's base...head diff touches a file
+      # they depend on; otherwise this step says so and every later step is skipped, so the job ends successfully
+      # without building. Not a required check (Q3 (a)). Pre-PR review P2-1: the gate is this workflow's
+      # pull_request paths (each below; `crates/*/Cargo.toml` as one pattern, `crates/<name>/**` as
+      # `^crates/<name>/`, `crates/<name>/src/**` as `^crates/<name>/src/`), minus the excluded non-code inputs
+      # named below, plus A's Q3 patterns; test_ardr_workflow pins that. P3-2: `--no-renames`, so a renamed
+      # file's old path is listed too.
+      - name: Decide whether the L0 rows run (changed files)
+        id: changed
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          # Trigger paths the L0 rows do not read (not gated):
+          #   docs/claude-track/formats/ARDR_RUN_V1.md: the format text; no row or tool reads it
+          #   tests/claude_track/ardr_pr_smoke_policy_draft.json: the PR smoke job's policy, not an L0 row's
+          #   tests/claude_track/ardr_pr_smoke_item1_policy_draft.json: the item-1 PR smoke policy, not an L0 row's
+          #   tests/claude_track/ardr_s04_job_log_41141733654_excerpt.txt: an S04 citation fixture of the slice tests
+          patterns=(
+            '^tools/claude_track_ardr_[^/]*\.py$'
+            '^tests/claude_track/test_ardr_[^/]*\.py$'
+            '^crates/bitagi-launch-host/tests/'
+            '^crates/bitagi-signer/tests/'
+            '^tools/claude_track_regtest_offline_export\.py$'
+            '^tools/claude_track_exit\.py$'
+            '^tools/common\.py$'
+            '^crates/[^/]+/Cargo\.toml$'
+            '^Cargo\.toml$'
+            '^Cargo\.lock$'
+            '^rust-toolchain\.toml$'
+            '^tests/claude_track/ardr_l0_rows\.py$'
+            '^\.github/workflows/claude-track-ardr\.yml$'
+            '^crates/bitagi-launch-host/'
+            '^crates/bitagi-signer/'
+            '^crates/bitagi-bitcoin/src/'
+            '^crates/bitagi-core/src/'
+            '^crates/bitagi-h0-receipt/src/'
+            '^crates/bitagi-hash/src/'
+            '^crates/bitagi-launch/src/'
+            '^crates/bitagi-launch-transport/src/'
+            '^crates/bitagi-profile/src/'
+            '^crates/bitagi-store/src/'
+            '^crates/bitagi-types/src/'
+            '^crates/bitagi-wallet/src/'
+            '^crates/bitagi-wire/src/'
+          )
+          regex="$(IFS='|'; echo "${patterns[*]}")"
+          git diff --no-renames --name-only "$BASE_SHA...$HEAD_SHA" > "$RUNNER_TEMP/changed.txt"
+          if grep -Eq "$regex" "$RUNNER_TEMP/changed.txt"; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            grep -E "$regex" "$RUNNER_TEMP/changed.txt"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "no changed files: ${patterns[*]}"
+          fi
+
+      - name: Set up Python
+        if: steps.changed.outputs.run == 'true'
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13.5'
+
+      - name: Install pinned Rust toolchain
+        if: steps.changed.outputs.run == 'true'
+        timeout-minutes: 5
+        run: rustup show active-toolchain || rustup toolchain install
+
+      # Archive and bitcoind hashes are claude-track-launch-matrix.yml's.
+      - name: Fetch and verify Bitcoin Core 31.1 and 30.3
+        if: steps.changed.outputs.run == 'true'
+        timeout-minutes: 10
+        working-directory: ${{ runner.temp }}
+        run: |
+          set -euo pipefail
+          fetch() {
+            name="bitcoin-$1-x86_64-linux-gnu.tar.gz"
+            curl -fsSL --retry 3 -o "$name" "https://bitcoincore.org/bin/bitcoin-core-$1/$name"
+            echo "$2  $name" | sha256sum -c -
+            tar -xzf "$name"
+            echo "$3  bitcoin-$1/bin/bitcoind" | sha256sum -c -
+          }
+          fetch 31.1 b80d9c3e04da78fb6f0569685673418cf686fadba9042d926d13fb87ff503f9e 986e63b3c8770f08d0059820ad3dd085d1ab9e1bea23946c243f858a06888a08
+          fetch 30.3 4753cd70416c629a2090503e8545a3c05e94a0f5037f8fb97b4c35c6e1afee0e 30d4fa871a5447be1f57f195c3fd021c6fa44f920693aa4650e61769326edca8
+
+      # The synthetic seats' generator worker (the item-4 and item-2 runs call it through cargo).
+      - name: Build the ARDR bidder generator worker
+        if: steps.changed.outputs.run == 'true'
+        timeout-minutes: 15
+        run: cargo test --locked --no-run -p bitagi-signer --test ardr_bidder_generator
+
+      # D3a-2b-2b (A Q6): the L0 seat's two Rust workers, built exactly as its stages call them (the host's
+      # test in target, the offline signer's with the offline-export workflow's cfg in target/offline-build),
+      # so no L0 stage compiles inside its own time. RUSTFLAGS is set for the offline build command only.
+      - name: Build the L0 host worker and the offline signer
+        if: steps.changed.outputs.run == 'true'
+        timeout-minutes: 30
+        run: |
+          set -euo pipefail
+          cargo test --locked --no-run -p bitagi-launch-host --test two_node_launch_accept
+          RUSTFLAGS='--cfg bitagi_offline_build' CARGO_TARGET_DIR=target/offline-build \
+            cargo test --locked --no-run -p bitagi-signer --features offline-ceremony --test launch_host_e2e_sign
+
+      # The work directories are under $RUNNER_TEMP, the parent of a slice's work root (the offline signer
+      # refuses a group- or world-writable ancestor). A 6565897037 Q3 (c), pre-PR review P3-1 / P3-3: the runner
+      # names the eight rows itself and prints one `L0_ROW <test id> <outcome>` line per row from unittest's
+      # result (always all eight, also after a failure); the step's status is the runner's (any row not `ok`,
+      # a skipped one included, fails it).
+      - name: Run the L0 real-node rows, none skipped
+        if: steps.changed.outputs.run == 'true'
+        timeout-minutes: 40
+        run: |
+          set -euo pipefail
+          mkdir -m 700 "$RUNNER_TEMP/ardr-l0-work"
+          BITAGI_ARDR_L0_WORK="$RUNNER_TEMP/ardr-l0-work" \
+            BITAGI_ARDR_L0_REAL=1 BITAGI_ARDR_CORE_31_1="$RUNNER_TEMP/bitcoin-31.1/bin" \
+            BITAGI_ARDR_CORE_30_3="$RUNNER_TEMP/bitcoin-30.3/bin" python3 tests/claude_track/ardr_l0_rows.py 2>&1 \
+            | tee "$RUNNER_TEMP/l0-rows.log"
+
+  plan:
+    name: ARDR dispatch plan (main only, slice budget, re-dispatch rule)
+    if: github.event_name == 'workflow_dispatch' && inputs.mode != 'RECOLLECT'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      slices: ${{ steps.plan.outputs.slices }}
+    steps:
+      - name: Refuse any ref but main and any attempt but the first
+        run: |
+          test "$GITHUB_REF" = refs/heads/main
+          test "$GITHUB_RUN_ATTEMPT" = 1
+
+      # Full history: the cited S04 run's head, and each recollection's RECOLLECT commit (D4-2), must be on the
+      # dispatched commit's first-parent history.
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Verify the exact dispatched head
+        env:
+          EXPECTED_HEAD_SHA: ${{ github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD_SHA"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13.5'
+
+      - name: Plan the slices and the declaration
+        id: plan
+        env:
+          ARDR_EXPERIMENT: ${{ inputs.experiment }}
+          ARDR_MODE: ${{ inputs.mode }}
+          ARDR_UNIT_FIRST: ${{ inputs.unit_first }}
+          ARDR_UNIT_LAST: ${{ inputs.unit_last }}
+          ARDR_UNITS_PER_SLICE: ${{ inputs.units_per_slice }}
+          ARDR_UNIT_MINUTES: ${{ inputs.unit_minutes }}
+          ARDR_POLICY: ${{ inputs.policy }}
+          ARDR_REGISTRATION: ${{ inputs.registration }}
+          ARDR_REGISTRATION_SHA256: ${{ inputs.registration_sha256 }}
+          ARDR_S04_RUN_ID: ${{ inputs.s04_run_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p target/ardr
+          python3 tools/claude_track_ardr_slices.py plan --experiment "$ARDR_EXPERIMENT" --mode "$ARDR_MODE" \
+            --unit-first "$ARDR_UNIT_FIRST" --unit-last "$ARDR_UNIT_LAST" \
+            --units-per-slice "$ARDR_UNITS_PER_SLICE" --unit-minutes "$ARDR_UNIT_MINUTES" \
+            --policy "$ARDR_POLICY" --registration "$ARDR_REGISTRATION" \
+            --registration-sha256 "$ARDR_REGISTRATION_SHA256" --s04-run-id "$ARDR_S04_RUN_ID" \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" --commit "$GITHUB_SHA" \
+            --out target/ardr/declaration.json --github-output "$GITHUB_OUTPUT"
+
+      # The only step with the token, CONFIRMATORY only (an EXPLORATORY dispatch reads nothing): GET requests for
+      # the cited S04 run (the run, its record artifact listing and then either the artifact or the record job's
+      # listing and log), and for the earlier dispatch runs of this workflow on main (every page, at most 10:
+      # a filtered listing holds at most 1,000 runs, and the tool refuses a total of 1,000 or more) and,
+      # for each earlier CONFIRMATORY run of this experiment, its attempt-1 jobs and its declaration and
+      # collection artifacts, and for each RECOLLECT run that recollected one of them, its recollection artifact
+      # (D4-2). The tool checks each answer before the next request; it reads files only.
+      - name: Read the cited S04 run and the earlier dispatch runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tool=tools/claude_track_ardr_slices.py
+          field() { python3 -c 'import json,sys; v=json.load(sys.stdin)[sys.argv[1]]; print("" if v is None else v)' "$1"; }
+          s04=$(python3 "$tool" s04-run-id --declaration target/ardr/declaration.json | tee /dev/stderr | field run_id)
+          if [ -n "$s04" ]; then
+            dir=target/ardr/s04
+            mkdir -p "$dir"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$s04" > "$dir/run.json"
+            att=$(python3 "$tool" s04-run --dir "$dir" --s04-run-id "$s04" --commit "$GITHUB_SHA" | tee /dev/stderr | field run_attempt)
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$s04/artifacts?name=s04-record-v2-$s04-$att" > "$dir/artifacts.json"
+            art=$(python3 "$tool" s04-artifact --dir "$dir" --s04-run-id "$s04" --run-attempt "$att" | tee /dev/stderr | field id)
+            if [ -n "$art" ]; then
+              gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$art/zip" > "$dir/record.zip"
+            else
+              gh api "repos/$GITHUB_REPOSITORY/actions/runs/$s04/attempts/$att/jobs?per_page=100" > "$dir/jobs.json"
+              job=$(python3 "$tool" s04-job --dir "$dir" --s04-run-id "$s04" --run-attempt "$att" | tee /dev/stderr | field id)
+              gh api "repos/$GITHUB_REPOSITORY/actions/jobs/$job/logs" > "$dir/job.log"
+            fi
+            prior=target/ardr/prior
+            mkdir -p "$prior"
+            runs="repos/$GITHUB_REPOSITORY/actions/workflows/claude-track-ardr.yml/runs?event=workflow_dispatch&branch=main&per_page=100"
+            gh api "$runs&page=1" > "$prior/runs-1.json"
+            pages=$(python3 "$tool" runs-pages --runs-dir "$prior" | field pages)
+            for page in $(seq 2 "$pages"); do
+              gh api "$runs&page=$page" > "$prior/runs-$page.json"
+            done
+            chosen=$(python3 "$tool" prior-runs --declaration target/ardr/declaration.json --runs-dir "$prior" \
+              --current-run-id "$GITHUB_RUN_ID" --current-run-number "$GITHUB_RUN_NUMBER" | tee /dev/stderr)
+            ids=$(printf '%s' "$chosen" | python3 -c 'import json,sys; print(" ".join(json.load(sys.stdin)["runs"]))')
+            again=$(printf '%s' "$chosen" | python3 -c 'import json,sys; print(" ".join(json.load(sys.stdin)["recollections"]))')
+            for id in $ids; do
+              gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id/attempts/1/jobs?per_page=100" > "$prior/$id-jobs.json"
+              for name in declaration collection; do
+                gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id/artifacts?name=ardr-$name" > "$prior/$id-$name.listing.json"
+                art=$(python3 "$tool" artifact-id --name "ardr-$name" \
+                  --listing "$prior/$id-$name.listing.json" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"] or "")')
+                if [ -n "$art" ]; then
+                  gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$art/zip" > "$prior/$id-$name.zip"
+                fi
+              done
+            done
+            for id in $again; do
+              gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id/artifacts?name=ardr-recollection" > "$prior/$id-recollection.listing.json"
+              art=$(python3 "$tool" artifact-id --name ardr-recollection \
+                --listing "$prior/$id-recollection.listing.json" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"] or "")')
+              if [ -n "$art" ]; then
+                gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$art/zip" > "$prior/$id-recollection.zip"
+              fi
+            done
+          fi
+
+      - name: Derive the S04 citation (CONFIRMATORY)
+        run: |
+          set -euo pipefail
+          mkdir -p target/ardr/s04
+          python3 tools/claude_track_ardr_slices.py s04-cite --declaration target/ardr/declaration.json \
+            --dir target/ardr/s04
+
+      - name: Refuse a re-dispatch of a unit with any observation
+        run: |
+          set -euo pipefail
+          python3 tools/claude_track_ardr_slices.py redispatch --declaration target/ardr/declaration.json \
+            --runs-dir target/ardr/prior --current-run-id "$GITHUB_RUN_ID" \
+            --current-run-number "$GITHUB_RUN_NUMBER" --prior-dir target/ardr/prior
+
+      # The files the citation was derived from and the citation itself; each slice carries citation.json.
+      - name: Upload the S04 citation
+        if: inputs.mode == 'CONFIRMATORY'
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ardr-s04
+          path: target/ardr/s04/
+          retention-days: 90
+          if-no-files-found: error
+
+      # Uploaded last, so a dispatch whose plan refused declares nothing.
+      - name: Upload the declaration
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ardr-declaration
+          path: target/ardr/declaration.json
+          retention-days: 90
+          if-no-files-found: error
+
+  slice:
+    name: ARDR slice ${{ matrix.slice }}
+    needs: plan
+    if: github.event_name == 'workflow_dispatch' && inputs.mode != 'RECOLLECT'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    # Round 2, P3-B: job-wide, so the units reuse the worker build's non-incremental artifacts.
+    env:
+      CARGO_INCREMENTAL: '0'
+    permissions:
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        slice: ${{ fromJSON(needs.plan.outputs.slices) }}
+    steps:
+      - name: Refuse any ref but main and any attempt but the first
+        run: |
+          test "$GITHUB_REF" = refs/heads/main
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          echo "ARDR_JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+
+      # The slice derives nothing from history (it carries plan's S04 citation): a shallow checkout.
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Verify the exact dispatched head
+        env:
+          EXPECTED_HEAD_SHA: ${{ github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD_SHA"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13.5'
+
+      - name: Download the declaration
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: ardr-declaration
+          path: target/ardr
+
+      # The record exists before the Core fetch, the token step and the S04 check: a failure of any of them
+      # leaves every unit BEFORE_START (re-dispatchable). A job that fails before this step writes no record;
+      # the collector then reads its skipped units step from the server (BEFORE_START too).
+      - name: Begin the slice record, every unit BEFORE_START
+        env:
+          ARDR_SLICE: ${{ matrix.slice }}
+          ARDR_MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          mkdir -p target/ardr/records
+          python3 tools/claude_track_ardr_slices.py slice-begin --declaration target/ardr/declaration.json \
+            --slice "$ARDR_SLICE" --mode "$ARDR_MODE" --out-dir "target/ardr/records/ardr-slice-$ARDR_SLICE"
+
+      # The only step with the token: one GET of this run attempt's jobs, for this job's server started_at (Q9).
+      - name: Read this job's server started_at
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs?per_page=100" \
+            > target/ardr/jobs-at-start.json
+
+      # Archive and bitcoind hashes are claude-track-launch-matrix.yml's.
+      - name: Fetch and verify Bitcoin Core 31.1 and 30.3
+        timeout-minutes: 10
+        working-directory: ${{ runner.temp }}
+        run: |
+          set -euo pipefail
+          fetch() {
+            name="bitcoin-$1-x86_64-linux-gnu.tar.gz"
+            curl -fsSL --retry 3 -o "$name" "https://bitcoincore.org/bin/bitcoin-core-$1/$name"
+            echo "$2  $name" | sha256sum -c -
+            tar -xzf "$name"
+            echo "$3  bitcoin-$1/bin/bitcoind" | sha256sum -c -
+          }
+          fetch 31.1 b80d9c3e04da78fb6f0569685673418cf686fadba9042d926d13fb87ff503f9e 986e63b3c8770f08d0059820ad3dd085d1ab9e1bea23946c243f858a06888a08
+          fetch 30.3 4753cd70416c629a2090503e8545a3c05e94a0f5037f8fb97b4c35c6e1afee0e 30d4fa871a5447be1f57f195c3fd021c6fa44f920693aa4650e61769326edca8
+
+      # D2-3a step 7: the Rust worker (D2-1's generator, chained BIRTH) that ITEM1 and POOL units call
+      # through cargo; built once here, before the first unit. It is part of
+      # the slice's 30 setup minutes (typically under 10: Core fetch, toolchain, a cold build of about 5); the
+      # time spent is passed to the slice as --spent-seconds, so a slow setup starts fewer units, never more.
+      - name: Install pinned Rust toolchain
+        timeout-minutes: 5
+        run: rustup show active-toolchain || rustup toolchain install
+
+      - name: Build the ARDR bidder generator worker
+        timeout-minutes: 15
+        run: cargo test --locked --no-run -p bitagi-signer --test ardr_bidder_generator
+
+      # D3a-2b-2b (A Q6): the L0 seat's two Rust workers, built exactly as its stages call them (the host's
+      # test in target, the offline signer's with the offline-export workflow's cfg in target/offline-build),
+      # so no L0 stage compiles inside its own time. RUSTFLAGS is set for the offline build command only. Only a
+      # CONFIRMATORY ITEM2 or item-4 slice runs the L0 seat; it builds here, inside the slice's setup minutes
+      # (counted in --spent-seconds).
+      - name: Build the L0 host worker and the offline signer
+        if: inputs.mode == 'CONFIRMATORY' && (inputs.experiment == 'ITEM2' || startsWith(inputs.experiment, 'ITEM4_'))
+        timeout-minutes: 30
+        run: |
+          set -euo pipefail
+          cargo test --locked --no-run -p bitagi-launch-host --test two_node_launch_accept
+          RUSTFLAGS='--cfg bitagi_offline_build' CARGO_TARGET_DIR=target/offline-build \
+            cargo test --locked --no-run -p bitagi-signer --features offline-ceremony --test launch_host_e2e_sign
+
+      - name: Download the S04 citation plan derived (CONFIRMATORY)
+        if: inputs.mode == 'CONFIRMATORY'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: ardr-s04
+          path: target/ardr/s04
+
+      # The policy, this job's started_at and the S04 citation are checked first; a refusal there rewrites the
+      # record with every unit BEFORE_START and the refusal's code.
+      - name: Run the slice's units
+        timeout-minutes: 320
+        env:
+          ARDR_SLICE: ${{ matrix.slice }}
+          ARDR_MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          s04=()
+          if [ "$ARDR_MODE" = CONFIRMATORY ]; then s04=(--s04-dir target/ardr/s04); fi
+          python3 tools/claude_track_ardr_slices.py slice --declaration target/ardr/declaration.json \
+            --slice "$ARDR_SLICE" --mode "$ARDR_MODE" --jobs target/ardr/jobs-at-start.json "${s04[@]}" \
+            --spent-seconds "$(( $(date +%s) - ARDR_JOB_START ))" \
+            --node-a "$RUNNER_TEMP/bitcoin-31.1/bin" --node-b "$RUNNER_TEMP/bitcoin-30.3/bin" \
+            --work-root "$RUNNER_TEMP/ardr-work" --out-dir "target/ardr/records/ardr-slice-$ARDR_SLICE"
+
+      - name: Upload the slice record and raw logs
+        if: always()
+        timeout-minutes: 10
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ardr-slice-${{ matrix.slice }}
+          path: target/ardr/records/ardr-slice-${{ matrix.slice }}/
+          retention-days: 90
+          if-no-files-found: warn
+
+  collect:
+    name: ARDR collection (this run's records and jobs listing)
+    needs: [plan, slice]
+    if: always() && github.event_name == 'workflow_dispatch' && needs.plan.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      # A later attempt would collect another attempt's jobs; recovery after a failed attempt-1 collect is
+      # a new run (ARDR_RUN_V1 section 13).
+      - name: Refuse any ref but main and any attempt but the first
+        run: |
+          test "$GITHUB_REF" = refs/heads/main
+          test "$GITHUB_RUN_ATTEMPT" = 1
+
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Verify the exact dispatched head
+        env:
+          EXPECTED_HEAD_SHA: ${{ github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD_SHA"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13.5'
+
+      - name: Download the declaration
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: ardr-declaration
+          path: target/ardr
+
+      # This run's slice artifacts only (no run-id input); each lands in its own ardr-slice-<n> directory.
+      - name: Download this run's slice records
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: ardr-slice-*
+          path: target/ardr/records
+
+      # The only step with the token: one GET of this run attempt's jobs (each slice job's server started_at).
+      - name: Read this run's jobs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs?per_page=100" \
+            > target/ardr/jobs.json
+
+      - name: Collect the observation list
+        run: |
+          set -euo pipefail
+          mkdir -p target/ardr/records target/ardr/out
+          python3 tools/claude_track_ardr_slices.py collect --declaration target/ardr/declaration.json \
+            --records target/ardr/records --jobs target/ardr/jobs.json \
+            --out-collection target/ardr/out/collection.json --out-observations target/ardr/out/observations.json
+
+      - name: Upload the collection
+        if: always()
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ardr-collection
+          path: target/ardr/out/collection.json
+          retention-days: 90
+          if-no-files-found: warn
+
+      - name: Upload the observation list
+        if: always()
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ardr-observations
+          path: target/ardr/out/observations.json
+          retention-days: 90
+          if-no-files-found: ignore
+
+  # D4-2 (A #619 6542865820): the collect-only recovery of one CONFIRMATORY run whose collect job failed. It reads
+  # THAT run's declaration, slice artifacts and attempt-1 jobs listing only, derives its collection with collect's
+  # own function and uploads it wrapped in a recollection naming the original run (`recollected`); no unit runs and
+  # no observation is added. It shares the experiment's CONFIRMATORY concurrency group (above), dispatches from
+  # main, first attempt only; a later CONFIRMATORY plan uses the recollection in place of the missing collection.
+  recollect:
+    name: ARDR recollection (collect-only recovery of one CONFIRMATORY run from its own slice artifacts)
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'RECOLLECT'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Refuse any ref but main and any attempt but the first
+        run: |
+          test "$GITHUB_REF" = refs/heads/main
+          test "$GITHUB_RUN_ATTEMPT" = 1
+
+      # Full history: the original run's head must be on the dispatched commit's first-parent history (W653q).
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Verify the exact dispatched head
+        env:
+          EXPECTED_HEAD_SHA: ${{ github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD_SHA"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.13.5'
+
+      # Before the token step: a run id that is not digits is refused here and nothing is read or uploaded.
+      - name: Check the recollection inputs
+        env:
+          ARDR_EXPERIMENT: ${{ inputs.experiment }}
+          ARDR_RECOLLECT_RUN_ID: ${{ inputs.recollect_run_id }}
+        run: |
+          set -euo pipefail
+          python3 tools/claude_track_ardr_slices.py recollect-inputs --experiment "$ARDR_EXPERIMENT" \
+            --recollect-run-id "$ARDR_RECOLLECT_RUN_ID"
+          echo "ARDR_EXPERIMENT=$ARDR_EXPERIMENT" >> "$GITHUB_ENV"
+          echo "ARDR_ORIGINAL=$ARDR_RECOLLECT_RUN_ID" >> "$GITHUB_ENV"
+
+      # The only step with the token: GET requests for the original run, its attempt-1 jobs, its artifact listing,
+      # its declaration zip and its slice zips. The tool checks each answer before the next request.
+      - name: Read the original run, its jobs and its artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tool=tools/claude_track_ardr_slices.py
+          dir=target/ardr/original
+          mkdir -p "$dir"
+          field() { python3 -c 'import json,sys; v=json.load(sys.stdin)[sys.argv[1]]; print("" if v is None else v)' "$1"; }
+          ask=(--dir "$dir" --experiment "$ARDR_EXPERIMENT" --recollect-run-id "$ARDR_ORIGINAL")
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ARDR_ORIGINAL" > "$dir/run.json"
+          python3 "$tool" recollect-run "${ask[@]}"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ARDR_ORIGINAL/attempts/1/jobs?per_page=100" > "$dir/jobs.json"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ARDR_ORIGINAL/artifacts?per_page=100" > "$dir/artifacts.json"
+          art=$(python3 "$tool" recollect-declaration "${ask[@]}" | tee /dev/stderr | field id)
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$art/zip" > "$dir/declaration.zip"
+          pairs=$(python3 "$tool" recollect-slices "${ask[@]}" | tee /dev/stderr | python3 -c 'import json,sys; print(" ".join(json.load(sys.stdin)["downloads"]))')
+          for pair in $pairs; do
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/${pair#*:}/zip" > "$dir/slice-${pair%%:*}.zip"
+          done
+
+      - name: Recollect the original run's collection
+        run: |
+          set -euo pipefail
+          python3 tools/claude_track_ardr_slices.py recollect --dir target/ardr/original \
+            --experiment "$ARDR_EXPERIMENT" --recollect-run-id "$ARDR_ORIGINAL" \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" --commit "$GITHUB_SHA" \
+            --out-dir target/ardr/recollect
+
+      # Uploaded only when the recollection was written (no always()): a refused recollection uploads nothing.
+      - name: Upload the recollection
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ardr-recollection
+          path: target/ardr/recollect/recollection.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Upload the recollected observation list
+        timeout-minutes: 5
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ardr-recollected-observations
+          path: target/ardr/recollect/observations.json
+          retention-days: 90
+          if-no-files-found: ignore
