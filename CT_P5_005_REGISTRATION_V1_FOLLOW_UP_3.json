@@ -1,0 +1,71 @@
+{
+  "ardr_policy_sha256": [
+    "0e724087845287ab59901069ed1ad9b46a7880badec4f26a8faa0eda92c4e1d3"
+  ],
+  "evaluation_policy_sha256": "c7eece08daaf8827075ab01140dd3254dabad57d444cfe787c852405c3c49a9f",
+  "experiments": [
+    "ITEM4_SELF_DEALING",
+    "ITEM4_FEE_ASYMMETRY",
+    "ITEM4_CENSORSHIP",
+    "ITEM4_REORG"
+  ],
+  "node_b": {
+    "getblockhash_977600": "0000000000000000000059711cf0fcba3f17a37ea77b7750cc555d3dd22b5f84",
+    "getblockheader_977600_time": 1795652531
+  },
+  "node_versions": {
+    "30.3": {
+      "bitcoind_sha256": "30d4fa871a5447be1f57f195c3fd021c6fa44f920693aa4650e61769326edca8",
+      "tarball_sha256": "4753cd70416c629a2090503e8545a3c05e94a0f5037f8fb97b4c35c6e1afee0e"
+    },
+    "31.1": {
+      "bitcoind_sha256": "986e63b3c8770f08d0059820ad3dd085d1ab9e1bea23946c243f858a06888a08",
+      "tarball_sha256": "b80d9c3e04da78fb6f0569685673418cf686fadba9042d926d13fb87ff503f9e"
+    }
+  },
+  "pinned_files": {
+    ".github/workflows/claude-track-ardr-judge.yml": "7b790b059671af07ab51c98fcfe1129c7b4949793fe2f256f00ec568d7cd6922",
+    ".github/workflows/claude-track-ardr.yml": "400c2de21576e1c77008575bc5d884639de51e3af1e563b03b7ff661b79607d1",
+    "docs/claude-track/decisions/FD-CT-133_2026-11-12.md": "43268801324bbfffedb5c09eaf00d44fb652c1655fc5d7e785dcc53b7adcba1a",
+    "docs/claude-track/formats/ARDR_JUDGE_V1.md": "89aef8d216b54fc2d1293f3801ea189bfcfa4a648bd13cb48784163a7c5f70ce",
+    "docs/claude-track/formats/ARDR_RUN_V1.md": "d1892edb53b4a0cedeaa491cc93c6f743c750a92bedea987f138cddcb00ee53f",
+    "docs/claude-track/plans/CT-P3-045b_PREREGISTRATION_DRAFT_EN.md": "05139fde95b5a4cf51be733cfc438cb8aea27e52b175c00d85ce67f42c82674f",
+    "docs/claude-track/plans/CT-P5-001_INVENTORY_EN.md": "0b71cd04043c95b0afc02a2a894767a5f932c6cdd479e8a128487024554f7225",
+    "docs/claude-track/plans/notes/CT-P3-045b_PREREGISTRATION_DRAFT_EN/2026-11-09_b6000fz_request.json": "bbc085f1d4e8a49414cfebdb8ff87653160905d6f82ec68555e31a7937681c71",
+    "docs/claude-track/plans/notes/CT-P3-045b_PREREGISTRATION_DRAFT_EN/2026-11-09_b6000fz_result.json": "f009f7ab40455d062d95c45af4403e0e443b5de8e81691b55ae646b64e92b62f",
+    "docs/claude-track/plans/notes/CT-P5-001_DRIVER_EN/2026-11-25_item4-follow-up-seed-provenance.md": "527be7d6ab51a06c22f92212f2ca8e5a65a4dc12c72e3677b237405e9e0c13f1",
+    "docs/claude-track/preregistration/ARDR_POLICY_V1_CLASS_T_REGTEST_ITEM4_FOLLOW_UP.json": "0e724087845287ab59901069ed1ad9b46a7880badec4f26a8faa0eda92c4e1d3",
+    "docs/claude-track/preregistration/CAMPAIGN_BUDGET_V1_CLASS_T_REGTEST_L0.json": "7d0a7a35ffa4df11311955d11e00b8c9c0f0f7df5c6e84c222911d447c7f4dd4",
+    "tools/claude_track_ardr_bidders.py": "4a4cec207053f486fb6c566691c0e3f3186ecfd0b38fd788d63472c4e2c74426",
+    "tools/claude_track_ardr_campaign.py": "9f2fbca5ac3e7809c389b345d29a9baa512b1468ada588dd3e05026026fe46c1",
+    "tools/claude_track_ardr_driver.py": "d7c98ea1aec7843427bb00b07c7f627cf29678befd8b1e3ea0c3ed134115ed16",
+    "tools/claude_track_ardr_item2.py": "c32977851579198e0a4bfdf04c4da33fb3e56c893142f44ee230cf9465414279",
+    "tools/claude_track_ardr_item4.py": "ca21a85bf43e255c620cee7dc47d93ecb5ca18565b02c02e576ad34bc4dc9ede",
+    "tools/claude_track_ardr_judge.py": "7b0bcb2fe738f708e6a58e635e02efa6575d924c29349a66d579f268ac003b2b",
+    "tools/claude_track_ardr_l0.py": "1ce83b43e96034ae36614c87950173e38d5d441ac77e82fcf2a1abac14a63b7b",
+    "tools/claude_track_ardr_slices.py": "4e7b068ab70b164b5e61332d0f3c2ab2bc6179ec862bc6f22f9cc0c0c7f68081",
+    "tools/claude_track_ardr_throughput.py": "b7b5bb1017f2adf7f05602cd9633a717d205b28bd33532796426a0200e54f5bf",
+    "tools/claude_track_ardr_truth.py": "94f3c2305c15b52e07e5b1d43e9badd154e4a7df2925cb9adae20b87a1631ed6",
+    "tools/claude_track_exit.py": "40caf7868028b91d32265066caacdffda7ec2c5da53ba0810f9f9b200996d632",
+    "tools/claude_track_regtest_offline_export.py": "afc907d5216f8fef8302792d8e0c4146a17b91686c8d9745913e1c7585485833",
+    "tools/common.py": "f59dad66aa8442610048ee19656c11f4821006b7d056b181adb3e3628fe53a60"
+  },
+  "prior_registration_sha256": "55af241e1690fde2269fe157dbfe145602e2fcbe5fc95eb0e9a99e9b53d128ed",
+  "registration_key_ed25519_fingerprint": "SHA256:vSVjqy/2wHEi62/mOi56GwZMahrbIv2gTYe1xEDrZRM",
+  "release_class": "CLASS_T",
+  "schema": "BITAGI_CT_P5_005_REGISTRATION_V1_FOLLOW_UP_3",
+  "schemas": {
+    "campaign_budget": "BITAGI_CT_CAMPAIGN_BUDGET_V1",
+    "collection": "BITAGI_CT_ARDR_COLLECTION_V2",
+    "observation_list": "BITAGI_CT_OBSERVATION_LIST_V2",
+    "policy": "BITAGI_CT_ARDR_POLICY_V1",
+    "raw_log": "BITAGI_CT_ARDR_RAW_V1"
+  },
+  "seed": {
+    "block_hash": "0000000000000000000059711cf0fcba3f17a37ea77b7750cc555d3dd22b5f84",
+    "block_header_time": 1795652531,
+    "block_height": 977600,
+    "policy_pending_freeze_sha256": "657f920ab8dd0ce87be4ee9c1d3f3a41d4331d3ec5026112018e3dc99ed995f5",
+    "seed": "4fd4a1e59fc195f7ae909a46e2c7a07e863eaa24515746fae44a2bf12a46f166"
+  }
+}
